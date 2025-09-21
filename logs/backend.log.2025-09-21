@@ -1,0 +1,39 @@
+2025-09-21T13:32:48.386717Z  INFO The backend server is running at http://localhost:7878
+2025-09-21T13:32:48.389045Z  INFO The classic API doc is at http://localhost:7878/swagger-ui
+2025-09-21T13:32:48.389064Z  INFO The brief API doc is at http://localhost:7878/redoc
+2025-09-21T13:32:48.389076Z  INFO The API doc bases on web component is at http://localhost:7878/rapidoc
+2025-09-21T13:32:48.389085Z  INFO The modern API doc is at http://localhost:7878/scalar
+2025-09-21T13:38:13.896101Z  INFO Signal received, starting graceful shutdown
+2025-09-21T13:38:22.126821Z  INFO The backend server is running at http://localhost:7878
+2025-09-21T13:38:22.128855Z  INFO The classic API doc is at http://localhost:7878/swagger-ui
+2025-09-21T13:38:22.128867Z  INFO The brief API doc is at http://localhost:7878/redoc
+2025-09-21T13:38:22.128878Z  INFO The API doc bases on web component is at http://localhost:7878/rapidoc
+2025-09-21T13:38:22.128887Z  INFO The modern API doc is at http://localhost:7878/scalar
+2025-09-21T13:39:11.543952Z  INFO Signal received, starting graceful shutdown
+2025-09-21T13:40:15.451359Z  INFO The backend server is running at http://localhost:7878
+2025-09-21T13:40:15.453287Z  INFO The classic API doc is at http://localhost:7878/swagger-ui
+2025-09-21T13:40:15.453301Z  INFO The brief API doc is at http://localhost:7878/redoc
+2025-09-21T13:40:15.453311Z  INFO The API doc bases on web component is at http://localhost:7878/rapidoc
+2025-09-21T13:40:15.453319Z  INFO The modern API doc is at http://localhost:7878/scalar
+2025-09-21T13:41:08.743024Z  INFO Signal received, starting graceful shutdown
+2025-09-21T13:42:17.054505Z  INFO The backend server is running at http://localhost:7878
+2025-09-21T13:42:17.056943Z  INFO The classic API doc is at http://localhost:7878/swagger-ui
+2025-09-21T13:42:17.056966Z  INFO The brief API doc is at http://localhost:7878/redoc
+2025-09-21T13:42:17.056976Z  INFO The API doc bases on web component is at http://localhost:7878/rapidoc
+2025-09-21T13:42:17.056988Z  INFO The modern API doc is at http://localhost:7878/scalar
+2025-09-21T13:51:30.221216Z  INFO Signal received, starting graceful shutdown
+2025-09-21T13:52:14.296298Z  INFO The backend server is running at http://localhost:7878
+2025-09-21T13:52:14.298378Z  INFO The classic API doc is at http://localhost:7878/swagger-ui
+2025-09-21T13:52:14.298399Z  INFO The brief API doc is at http://localhost:7878/redoc
+2025-09-21T13:52:14.298406Z  INFO The API doc bases on web component is at http://localhost:7878/rapidoc
+2025-09-21T13:52:14.298415Z  INFO The modern API doc is at http://localhost:7878/scalar
+2025-09-21T13:58:24.990489Z  INFO The backend server is running at http://localhost:7878
+2025-09-21T13:58:24.992834Z  INFO The classic API doc is at http://localhost:7878/swagger-ui
+2025-09-21T13:58:24.992852Z  INFO The brief API doc is at http://localhost:7878/redoc
+2025-09-21T13:58:24.992863Z  INFO The API doc bases on web component is at http://localhost:7878/rapidoc
+2025-09-21T13:58:24.992872Z  INFO The modern API doc is at http://localhost:7878/scalar
+2025-09-21T13:59:30.028837Z  INFO The backend server is running at http://localhost:7878
+2025-09-21T13:59:30.031089Z  INFO The classic API doc is at http://localhost:7878/swagger-ui
+2025-09-21T13:59:30.031108Z  INFO The brief API doc is at http://localhost:7878/redoc
+2025-09-21T13:59:30.031118Z  INFO The API doc bases on web component is at http://localhost:7878/rapidoc
+2025-09-21T13:59:30.031127Z  INFO The modern API doc is at http://localhost:7878/scalar

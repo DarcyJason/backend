@@ -2,8 +2,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ValidationErrorKind {
-    #[error("Name is too short, it should be at least 1 characters")]
-    NameTooShort,
     #[error("Name is too long, it should be at most 20 characters")]
     NameTooLong,
     #[error("Email is invalid")]

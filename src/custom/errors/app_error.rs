@@ -26,7 +26,6 @@ impl AppError {
         match self {
             AppError::ConfigError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             AppError::ValidationError(err) => match err {
-                ValidationErrorKind::NameTooShort => (StatusCode::BAD_REQUEST, err.to_string()),
                 ValidationErrorKind::NameTooLong => (StatusCode::BAD_REQUEST, err.to_string()),
                 ValidationErrorKind::InvalidEmail => (StatusCode::BAD_REQUEST, err.to_string()),
                 ValidationErrorKind::EmptyField(_) => (StatusCode::BAD_REQUEST, err.to_string()),
@@ -46,9 +45,11 @@ impl AppError {
                 }
             },
             AppError::UserError(err) => match err {
-                UserErrorKind::CreateFailed => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
-                UserErrorKind::AlreadyExists => (StatusCode::BAD_REQUEST, err.to_string()),
-                UserErrorKind::NotFound => (StatusCode::NOT_FOUND, err.to_string()),
+                UserErrorKind::CreateUserFailed => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+                }
+                UserErrorKind::UserAlreadyExists => (StatusCode::BAD_REQUEST, err.to_string()),
+                UserErrorKind::UserNotFound => (StatusCode::NOT_FOUND, err.to_string()),
             },
             AppError::SurrealDBError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             AppError::RedisError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),

@@ -2,10 +2,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum UserErrorKind {
-    #[error("User creation failed")]
-    CreateFailed,
+    #[error("Failed to create user")]
+    CreateUserFailed,
     #[error("User already exists")]
-    AlreadyExists,
+    UserAlreadyExists,
     #[error("User not found")]
-    NotFound,
+    UserNotFound,
 }
