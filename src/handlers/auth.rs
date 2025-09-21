@@ -100,11 +100,12 @@ pub async fn register_handler(
             ValidationErrorKind::PasswordAndConfirmPasswordAreNotMatch,
         ));
     }
-    if let Some(_) = app_state
+    if app_state
         .db_client
         .surreal_client
         .find_user_by_email(payload.email.clone())
         .await?
+        .is_some()
     {
         return Err(AppError::UserError(UserErrorKind::UserAlreadyExists));
     }
