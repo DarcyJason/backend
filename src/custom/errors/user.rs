@@ -8,4 +8,6 @@ pub enum UserErrorKind {
     UserAlreadyExists,
     #[error("User not found")]
     UserNotFound,
+    #[error("Wrong password")]
+    WrongPassword,
 }

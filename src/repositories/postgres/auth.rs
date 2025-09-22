@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::{
     custom::{
-        errors::{app_error::AppError, user::UserErrorKind},
+        errors::{AppError, user::UserErrorKind},
         result::AppResult,
     },
     database::surreal::client::SurrealClient,
@@ -25,6 +25,7 @@ impl AuthRepository for SurrealClient {
                 name: $name,
                 email: $email,
                 password: $password,
+                role: $role,
                 salt: $salt,
                 is_active: $is_active
             }
@@ -35,6 +36,7 @@ impl AuthRepository for SurrealClient {
             .bind(("name", name))
             .bind(("email", email))
             .bind(("password", password))
+            .bind(("role", "user".to_string()))
             .bind(("salt", salt))
             .bind(("is_active", false))
             .await?;

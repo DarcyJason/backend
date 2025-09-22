@@ -1,3 +1,3 @@
-use crate::custom::errors::app_error::AppError;
+use crate::custom::errors::AppError;
 
 pub type AppResult<T> = Result<T, AppError>;

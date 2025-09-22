@@ -3,10 +3,11 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use cookie::Cookie;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::custom::errors::app_error::AppError;
+use crate::custom::errors::AppError;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ApiResponse<T> {
@@ -14,6 +15,8 @@ pub struct ApiResponse<T> {
     pub code: u16,
     pub message: String,
     pub data: Option<T>,
+    #[serde(skip_serializing)]
+    pub cookies: Vec<Cookie<'static>>,
 }
 
 impl<T> ApiResponse<T> {
@@ -23,6 +26,7 @@ impl<T> ApiResponse<T> {
             code: 200,
             message,
             data: Some(data),
+            cookies: Vec::new(),
         }
     }
     pub fn error(code: StatusCode, message: String) -> Self {
@@ -31,7 +35,17 @@ impl<T> ApiResponse<T> {
             code: code.as_u16(),
             message,
             data: None,
+            cookies: Vec::new(),
         }
+    }
+    pub fn with_cookie(mut self, cookie: Cookie<'static>) -> Self {
+        self.cookies.push(cookie);
+        self
+    }
+
+    pub fn with_cookies<I: IntoIterator<Item = Cookie<'static>>>(mut self, cookies: I) -> Self {
+        self.cookies.extend(cookies);
+        self
     }
 }
 
@@ -40,17 +54,15 @@ where
     T: Serialize,
 {
     fn into_response(self) -> Response {
-        match StatusCode::from_u16(self.code) {
-            Ok(code) => (code, Json(self)).into_response(),
-            Err(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<()>::error(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Internal Server Error".to_string(),
-                )),
-            )
-                .into_response(),
+        let status = StatusCode::from_u16(self.code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let mut response = (status, Json(&self)).into_response();
+        for cookie in self.cookies {
+            response.headers_mut().append(
+                axum::http::header::SET_COOKIE,
+                cookie.to_string().parse().unwrap(),
+            );
         }
+        response
     }
 }
 

@@ -8,8 +8,9 @@ pub struct User {
     pub name: String,
     pub email: String,
     pub password: String,
+    pub role: String,
     pub salt: String,
     pub is_active: Option<bool>,
-    pub created_at: Option<DateTime<Utc>>,
-    pub updated_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

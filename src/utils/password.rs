@@ -5,7 +5,7 @@ use argon2::PasswordVerifier;
 use argon2::password_hash::SaltString;
 use argon2::password_hash::rand_core::OsRng;
 
-use crate::custom::errors::app_error::AppError;
+use crate::custom::errors::AppError;
 use crate::custom::errors::validation::ValidationErrorKind;
 use crate::custom::result::AppResult;
 

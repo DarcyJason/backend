@@ -1,4 +1,4 @@
-use crate::custom::errors::{app_error::AppError, validation::ValidationErrorKind};
+use crate::custom::errors::{AppError, validation::ValidationErrorKind};
 
 impl From<figment::Error> for AppError {
     fn from(err: figment::Error) -> Self {
