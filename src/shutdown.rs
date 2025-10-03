@@ -1,9 +1,7 @@
 use tokio::signal;
 use tracing::info;
 
-use crate::custom::result::AppResult;
-
-pub async fn shutdown_signal() -> AppResult<()> {
+pub async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -14,5 +12,4 @@ pub async fn shutdown_signal() -> AppResult<()> {
     }
     println!();
     info!("Signal received, starting graceful shutdown");
-    Ok(())
 }

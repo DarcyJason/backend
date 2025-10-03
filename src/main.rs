@@ -35,11 +35,7 @@ async fn main() -> AppResult<()> {
         listener,
         router.into_make_service_with_connect_info::<SocketAddr>(),
     )
-    .with_graceful_shutdown(async {
-        if let Err(e) = shutdown_signal().await {
-            error!("Shutdown signal error: {}", e);
-        }
-    })
+    .with_graceful_shutdown(shutdown_signal())
     .await?;
     Ok(())
 }
