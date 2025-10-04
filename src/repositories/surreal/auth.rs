@@ -12,14 +12,14 @@ use crate::{
 
 #[async_trait]
 pub trait AuthRepository {
-    async fn create_user(&self, name: &String, email: &String, password: &String) -> AppResult<()>;
-    async fn find_user_by_email(&self, email: &String) -> AppResult<Option<User>>;
-    async fn find_user_by_id(&self, id: &String) -> AppResult<Option<User>>;
+    async fn create_user(&self, name: &str, email: &str, password: &str) -> AppResult<()>;
+    async fn find_user_by_email(&self, email: &str) -> AppResult<Option<User>>;
+    async fn find_user_by_id(&self, id: &str) -> AppResult<Option<User>>;
 }
 
 #[async_trait]
 impl AuthRepository for SurrealClient {
-    async fn create_user(&self, name: &String, email: &String, password: &String) -> AppResult<()> {
+    async fn create_user(&self, name: &str, email: &str, password: &str) -> AppResult<()> {
         let (password, salt) = hash_password(password.to_string())?;
         let sql = r#"
             CREATE users CONTENT {
@@ -47,7 +47,7 @@ impl AuthRepository for SurrealClient {
             None => Err(AppError::UserError(UserErrorKind::CreateUserFailed)),
         }
     }
-    async fn find_user_by_email(&self, email: &String) -> AppResult<Option<User>> {
+    async fn find_user_by_email(&self, email: &str) -> AppResult<Option<User>> {
         let sql = r#"
             SELECT * FROM users WHERE email = $email LIMIT 1
         "#;
@@ -59,7 +59,7 @@ impl AuthRepository for SurrealClient {
         let user: Option<User> = result.take(0)?;
         Ok(user)
     }
-    async fn find_user_by_id(&self, id: &String) -> AppResult<Option<User>> {
+    async fn find_user_by_id(&self, id: &str) -> AppResult<Option<User>> {
         let sql = r#"
             SELECT * FROM users WHERE id = $id LIMIT 1
         "#;

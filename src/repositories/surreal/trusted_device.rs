@@ -13,7 +13,7 @@ use crate::{
 pub trait TrustedDeviceRepository {
     async fn create_trusted_device(
         &self,
-        user_id: &String,
+        user_id: &str,
         device: String,
         ip: String,
     ) -> AppResult<()>;
@@ -23,7 +23,7 @@ pub trait TrustedDeviceRepository {
 impl TrustedDeviceRepository for SurrealClient {
     async fn create_trusted_device(
         &self,
-        user_id: &String,
+        user_id: &str,
         device: String,
         ip: String,
     ) -> AppResult<()> {
