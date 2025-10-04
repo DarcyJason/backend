@@ -6,9 +6,12 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::custom::errors::{user::UserErrorKind, validation::ValidationErrorKind};
+use crate::custom::errors::{
+    trusted_device::TrustedDeviceErrorKind, user::UserErrorKind, validation::ValidationErrorKind,
+};
 
 pub mod from;
+pub mod trusted_device;
 pub mod user;
 pub mod validation;
 
@@ -20,6 +23,8 @@ pub enum AppError {
     ValidationError(#[from] ValidationErrorKind),
     #[error("User error: {0}")]
     UserError(#[from] UserErrorKind),
+    #[error("Device error: {0}")]
+    TrustedDeviceError(#[from] TrustedDeviceErrorKind),
     #[error("Email error: {0}")]
     EmailError(#[from] lettre::error::Error),
     #[error("Email address error: {0}")]
@@ -65,6 +70,11 @@ impl IntoResponse for AppError {
                 UserErrorKind::UserNotFound => (StatusCode::NOT_FOUND, err.to_string()),
                 UserErrorKind::WrongPassword => (StatusCode::UNAUTHORIZED, err.to_string()),
                 UserErrorKind::TokenGenerationFailed => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+                }
+            },
+            AppError::TrustedDeviceError(err) => match err {
+                TrustedDeviceErrorKind::CreateTrustDeviceFailed => {
                     (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
                 }
             },

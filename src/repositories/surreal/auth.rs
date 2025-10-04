@@ -9,31 +9,18 @@ use crate::{
     models::user::User,
     security::crypto::password::hash_password,
 };
+
 #[async_trait]
 pub trait AuthRepository {
-    async fn create_user(
-        &self,
-        name: String,
-        email: String,
-        password: String,
-        ip: String,
-        device: String,
-    ) -> AppResult<User>;
-    async fn find_user_by_email(&self, email: String) -> AppResult<Option<User>>;
-    async fn find_user_by_id(&self, id: String) -> AppResult<Option<User>>;
+    async fn create_user(&self, name: &String, email: &String, password: &String) -> AppResult<()>;
+    async fn find_user_by_email(&self, email: &String) -> AppResult<Option<User>>;
+    async fn find_user_by_id(&self, id: &String) -> AppResult<Option<User>>;
 }
 
 #[async_trait]
 impl AuthRepository for SurrealClient {
-    async fn create_user(
-        &self,
-        name: String,
-        email: String,
-        password: String,
-        ip: String,
-        device: String,
-    ) -> AppResult<User> {
-        let (password, salt) = hash_password(password)?;
+    async fn create_user(&self, name: &String, email: &String, password: &String) -> AppResult<()> {
+        let (password, salt) = hash_password(password.to_string())?;
         let sql = r#"
             CREATE users CONTENT {
                 id: rand::uuid::v4(),
@@ -43,37 +30,40 @@ impl AuthRepository for SurrealClient {
                 role: $role,
                 salt: $salt,
                 is_verified: false,
-                ip: $ip,
-                device: $device
             }
         "#;
         let mut result = self
             .client
             .query(sql)
-            .bind(("name", name))
-            .bind(("email", email))
+            .bind(("name", name.to_string()))
+            .bind(("email", email.to_string()))
             .bind(("password", password))
             .bind(("role", "user".to_string()))
             .bind(("salt", salt))
-            .bind(("ip", ip))
-            .bind(("device", device))
             .await?;
         let user: Option<User> = result.take(0)?;
-        user.ok_or_else(|| AppError::UserError(UserErrorKind::CreateUserFailed))
+        match user {
+            Some(_) => Ok(()),
+            None => Err(AppError::UserError(UserErrorKind::CreateUserFailed)),
+        }
     }
-    async fn find_user_by_email(&self, email: String) -> AppResult<Option<User>> {
+    async fn find_user_by_email(&self, email: &String) -> AppResult<Option<User>> {
         let sql = r#"
             SELECT * FROM users WHERE email = $email LIMIT 1
         "#;
-        let mut result = self.client.query(sql).bind(("email", email)).await?;
+        let mut result = self
+            .client
+            .query(sql)
+            .bind(("email", email.to_string()))
+            .await?;
         let user: Option<User> = result.take(0)?;
         Ok(user)
     }
-    async fn find_user_by_id(&self, id: String) -> AppResult<Option<User>> {
+    async fn find_user_by_id(&self, id: &String) -> AppResult<Option<User>> {
         let sql = r#"
             SELECT * FROM users WHERE id = $id LIMIT 1
         "#;
-        let mut result = self.client.query(sql).bind(("id", id)).await?;
+        let mut result = self.client.query(sql).bind(("id", id.to_string())).await?;
         let user: Option<User> = result.take(0)?;
         Ok(user)
     }

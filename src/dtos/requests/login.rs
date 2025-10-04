@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::models::trust_device::TrustDevice;
+use crate::models::trusted_device::TrustDevice;
 
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {

@@ -1,3 +1,2 @@
-pub mod auth;
-pub mod mfa;
-pub mod password;
+pub mod protected;
+pub mod public;

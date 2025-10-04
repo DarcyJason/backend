@@ -9,5 +9,4 @@ pub struct TrustDevice {
     pub device: String,
     pub ip: String,
     pub last_login_at: DateTime<Utc>,
-    pub trust_until: DateTime<Utc>,
 }
