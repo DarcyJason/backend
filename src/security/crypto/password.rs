@@ -18,8 +18,8 @@ pub fn hash_password(password: String) -> AppResult<(String, String)> {
     Ok((hashed_password, salt.to_string()))
 }
 
-pub fn compare_hashed_password(password: String, hashed_password: String) -> AppResult<bool> {
-    let parsed_hash = PasswordHash::new(&hashed_password)
+pub fn compare_hashed_password(password: &str, hashed_password: &str) -> AppResult<bool> {
+    let parsed_hash = PasswordHash::new(hashed_password)
         .map_err(|err| AppError::ValidationError(ValidationErrorKind::PasswordHashingError(err)))?;
     let is_password_match = Argon2::default()
         .verify_password(password.as_bytes(), &parsed_hash)

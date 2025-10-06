@@ -7,10 +7,12 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::custom::errors::{
-    trusted_device::TrustedDeviceErrorKind, user::UserErrorKind, validation::ValidationErrorKind,
+    refresh_token::RefreshTokenErrorKind, trusted_device::TrustedDeviceErrorKind,
+    user::UserErrorKind, validation::ValidationErrorKind,
 };
 
 pub mod from;
+pub mod refresh_token;
 pub mod trusted_device;
 pub mod user;
 pub mod validation;
@@ -23,8 +25,10 @@ pub enum AppError {
     ValidationError(#[from] ValidationErrorKind),
     #[error("User error: {0}")]
     UserError(#[from] UserErrorKind),
-    #[error("Device error: {0}")]
+    #[error("Trusted device error: {0}")]
     TrustedDeviceError(#[from] TrustedDeviceErrorKind),
+    #[error("Refresh token error: {0}")]
+    RefreshTokenError(#[from] RefreshTokenErrorKind),
     #[error("Email error: {0}")]
     EmailError(#[from] lettre::error::Error),
     #[error("Email address error: {0}")]
@@ -74,7 +78,15 @@ impl IntoResponse for AppError {
                 }
             },
             AppError::TrustedDeviceError(err) => match err {
-                TrustedDeviceErrorKind::CreateTrustDeviceFailed => {
+                TrustedDeviceErrorKind::CreateTrustedDeviceFailed => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+                }
+                TrustedDeviceErrorKind::TrustedDeviceNotFound => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+                }
+            },
+            AppError::RefreshTokenError(err) => match err {
+                RefreshTokenErrorKind::CreateRefreshTokenFailed => {
                     (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
                 }
             },
@@ -90,7 +102,7 @@ impl IntoResponse for AppError {
             AppError::OtherError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
         };
         let body = ErrorResponse {
-            status: "error".to_string(),
+            status: "err".to_string(),
             code: status_code.as_u16(),
             message,
         };

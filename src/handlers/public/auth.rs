@@ -13,14 +13,23 @@ use crate::{
     constants_and_statics::regex::NAME_REGEX,
     custom::{
         errors::{
-            AppError, trusted_device::TrustedDeviceErrorKind, user::UserErrorKind,
-            validation::ValidationErrorKind,
+            AppError, refresh_token::RefreshTokenErrorKind, trusted_device::TrustedDeviceErrorKind,
+            user::UserErrorKind, validation::ValidationErrorKind,
         },
         result::AppResult,
     },
-    dtos::{requests::register::RegisterRequest, responses::register::RegisterResponse},
-    repositories::surreal::{auth::AuthRepository, trusted_device::TrustedDeviceRepository},
-    security::crypto::password::validate_password,
+    dtos::{
+        requests::{login::LoginRequest, register::RegisterRequest},
+        responses::{login::LoginResponse, register::RegisterResponse},
+    },
+    repositories::surreal::{
+        auth::AuthRepository, refresh_token::RefreshTokenRepository,
+        trusted_device::TrustedDeviceRepository,
+    },
+    security::{
+        crypto::password::{compare_hashed_password, validate_password},
+        jwt::generate_tokens,
+    },
     state::AppState,
     utils::device::get_device_info,
 };
@@ -145,13 +154,7 @@ pub async fn register(
         }
     }
     info!("Start creating trusted device");
-    let user_agent = headers
-        .get("User-Agent")
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_string();
-    let device_info = get_device_info(user_agent);
+    let device_info = get_device_info(headers);
     let user = app_state
         .db_client
         .surreal_client
@@ -173,7 +176,7 @@ pub async fn register(
                 e
             );
             return Err(AppError::TrustedDeviceError(
-                TrustedDeviceErrorKind::CreateTrustDeviceFailed,
+                TrustedDeviceErrorKind::CreateTrustedDeviceFailed,
             ));
         }
     }
@@ -184,10 +187,104 @@ pub async fn register(
     Ok((
         StatusCode::OK,
         Json(RegisterResponse {
-            status: "success".to_string(),
+            status: "ok".to_string(),
             code: StatusCode::OK.as_u16(),
             message: "Register success".to_string(),
         }),
     )
         .into_response())
+}
+
+#[instrument(skip(app_state, headers))]
+pub async fn login(
+    State(app_state): State<Arc<AppState>>,
+    uri: OriginalUri,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    Json(payload): Json<LoginRequest>,
+) -> AppResult<impl IntoResponse> {
+    info!("Start handling user login");
+    if payload.email.is_empty() {
+        return Err(AppError::ValidationError(
+            ValidationErrorKind::ValidationFailed("Email cannot be empty".to_string()),
+        ));
+    }
+    if !ValidateEmail::validate_email(&payload.email.to_string()) {
+        return Err(AppError::ValidationError(
+            ValidationErrorKind::ValidationFailed(
+                "Email must be a valid email address".to_string(),
+            ),
+        ));
+    }
+    if payload.password.is_empty() {
+        return Err(AppError::ValidationError(
+            ValidationErrorKind::ValidationFailed("Password cannot be empty".to_string()),
+        ));
+    }
+    if payload.password.len() < 8 {
+        return Err(AppError::ValidationError(
+            ValidationErrorKind::ValidationFailed(
+                "Password must be at least 8 characters long".to_string(),
+            ),
+        ));
+    }
+    if payload.password.len() > 20 {
+        return Err(AppError::ValidationError(
+            ValidationErrorKind::ValidationFailed(
+                "Password must be at most 20 characters long".to_string(),
+            ),
+        ));
+    }
+    if !validate_password(&payload.password) {
+        return Err(AppError::ValidationError(
+            ValidationErrorKind::ValidationFailed(
+                "Password must contain letters, numbers and special characters".to_string(),
+            ),
+        ));
+    }
+    let user = match app_state
+        .db_client
+        .surreal_client
+        .find_user_by_email(&payload.email)
+        .await?
+    {
+        Some(user) => user,
+        None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+    };
+    if compare_hashed_password(&payload.password, &user.password)? {
+        return Err(AppError::UserError(UserErrorKind::WrongPassword));
+    }
+    let device_info = get_device_info(headers);
+    let user_trusted_device = app_state
+        .db_client
+        .surreal_client
+        .find_trusted_device_by_email(&user.email)
+        .await?
+        .device;
+    let (access_token, refresh_token) = generate_tokens(
+        user.id.id.to_raw(),
+        &app_state.config.jwt_config.jwt_secret.as_bytes(),
+        app_state.config.jwt_config.access_token_expires_in_seconds,
+        app_state.config.jwt_config.refresh_token_expires_in_seconds,
+    )?;
+    match app_state
+        .db_client
+        .surreal_client
+        .create_refresh_token(&user.id.id.to_raw(), refresh_token.as_str())
+        .await
+    {
+        Ok(_) => {
+            info!("Login success with email {}", &user.email);
+            Ok((
+                StatusCode::OK,
+                Json(LoginResponse { access_token }).into_response(),
+            ))
+        }
+        Err(e) => {
+            error!("Create refresh_token with email {} : {}", &user.email, e);
+            return Err(AppError::RefreshTokenError(
+                RefreshTokenErrorKind::CreateRefreshTokenFailed,
+            ));
+        }
+    }
 }

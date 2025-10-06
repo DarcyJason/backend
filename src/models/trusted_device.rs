@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct TrustDevice {
+pub struct TrustedDevice {
     pub id: Thing,
     pub user_id: String,
     pub device: String,
