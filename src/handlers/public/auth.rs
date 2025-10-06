@@ -254,8 +254,8 @@ pub async fn login(
     if compare_hashed_password(&payload.password, &user.password)? {
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
-    let device_info = get_device_info(headers);
-    let user_trusted_device = app_state
+    let _device_info = get_device_info(headers);
+    let _user_trusted_device = app_state
         .db_client
         .surreal_client
         .find_trusted_device_by_email(&user.email)
