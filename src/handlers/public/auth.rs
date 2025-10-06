@@ -263,7 +263,7 @@ pub async fn login(
         .device;
     let (access_token, refresh_token) = generate_tokens(
         user.id.id.to_raw(),
-        &app_state.config.jwt_config.jwt_secret.as_bytes(),
+        app_state.config.jwt_config.jwt_secret.as_bytes(),
         app_state.config.jwt_config.access_token_expires_in_seconds,
         app_state.config.jwt_config.refresh_token_expires_in_seconds,
     )?;
