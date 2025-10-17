@@ -4,6 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::Serialize;
+use tracing::error;
 
 #[derive(Serialize)]
 pub struct AppResponse<T>
@@ -55,7 +56,7 @@ where
                 (status_code, Json(body)).into_response()
             }
             Err(_) => {
-                eprintln!("Invalid status code: {}", self.code);
+                error!("❌ Invalid status code: {}", self.code);
                 let body = AppResponse {
                     status: "error".to_string(),
                     code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
