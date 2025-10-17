@@ -43,19 +43,27 @@ where
     T: Serialize,
 {
     fn into_response(self) -> Response {
-        let status_code = match StatusCode::from_u16(self.code) {
-            Ok(code) => code,
+        match StatusCode::from_u16(self.code) {
+            Ok(code) => {
+                let status_code = code;
+                let body = AppResponse {
+                    status: self.status,
+                    code: self.code,
+                    message: self.message,
+                    data: self.data,
+                };
+                (status_code, Json(body)).into_response()
+            }
             Err(_) => {
                 eprintln!("Invalid status code: {}", self.code);
-                StatusCode::INTERNAL_SERVER_ERROR
+                let body = AppResponse {
+                    status: "error".to_string(),
+                    code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    message: "Internal Server Error".to_string(),
+                    data: None::<()>,
+                };
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(body)).into_response()
             }
-        };
-        let body = AppResponse {
-            status: self.status,
-            code: self.code,
-            message: self.message,
-            data: self.data,
-        };
-        (status_code, Json(body)).into_response()
+        }
     }
 }
