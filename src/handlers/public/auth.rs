@@ -151,7 +151,7 @@ pub async fn register(
         "Finish Handling user registration successfully with email: {}",
         payload.email
     );
-    Ok(AppResponse::default(
+    Ok(AppResponse::success(
         "Register success".to_string(),
         None::<()>,
     ))
@@ -238,7 +238,7 @@ pub async fn login(
             info!("Login success with email {}", &user.email);
             Ok((
                 updated_jar,
-                AppResponse::default(
+                AppResponse::success(
                     "Login Success".to_string(),
                     Some(serde_json::json!({
                         "access_token": access_token,

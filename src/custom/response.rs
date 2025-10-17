@@ -20,7 +20,7 @@ impl<T> AppResponse<T>
 where
     T: Serialize,
 {
-    pub fn default(message: String, data: Option<T>) -> Self {
+    pub fn success(message: String, data: Option<T>) -> Self {
         AppResponse {
             status: "success".to_string(),
             code: StatusCode::OK.as_u16(),
@@ -28,9 +28,9 @@ where
             data,
         }
     }
-    pub fn build(status: String, code: u16, message: String, data: Option<T>) -> Self {
+    pub fn error(code: u16, message: String, data: Option<T>) -> Self {
         AppResponse {
-            status,
+            status: "error".to_string(),
             code,
             message,
             data,

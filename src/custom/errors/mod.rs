@@ -85,7 +85,7 @@ impl IntoResponse for AppError {
             AppError::IOError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::OtherError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
-        let body = AppResponse::build("err".to_string(), status_code.as_u16(), message, None::<()>);
+        let body = AppResponse::error(status_code.as_u16(), message, None::<()>);
         (status_code, Json(body)).into_response()
     }
 }
