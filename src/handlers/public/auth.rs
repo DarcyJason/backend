@@ -5,7 +5,7 @@ use axum::{
     extract::{ConnectInfo, OriginalUri, State},
     response::IntoResponse,
 };
-use cookie::{Cookie, CookieJar};
+use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use tracing::{error, info, instrument};
 use validator::ValidateEmail;
 
@@ -161,7 +161,6 @@ pub async fn register(
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
     uri: OriginalUri,
-    mut jar: CookieJar,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
@@ -213,7 +212,7 @@ pub async fn login(
         Some(user) => user,
         None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
     };
-    if compare_hashed_password(&payload.password, &user.password)? {
+    if !compare_hashed_password(&payload.password, &user.password)? {
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
     let access_token = generate_access_token(
@@ -232,9 +231,9 @@ pub async fn login(
             let cookie = Cookie::build(("refresh_token", refresh_token))
                 .http_only(true)
                 .secure(true)
-                .same_site(cookie::SameSite::Strict)
+                .same_site(SameSite::Strict)
                 .build();
-            let updated_jar = jar.add(cookie);
+            let updated_jar = CookieJar::new().add(cookie);
             info!("Login success with email {}", &user.email);
             Ok((
                 updated_jar,

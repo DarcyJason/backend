@@ -16,7 +16,6 @@ async-trait = "0.1.89"
 axum = { version = "0.8.4", features = ["macros"] }
 axum-extra = { version = "0.10.1", features = ["cookie"] }
 chrono = { version = "0.4.41", features = ["serde"] }
-cookie = "0.18.1"
 dotenvy = "0.15.7"
 figment = { version = "0.10.19", features = ["env"] }
 jsonwebtoken = "9.3.1"

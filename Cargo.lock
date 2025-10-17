@@ -426,7 +426,6 @@ dependencies = [
  "axum-extra",
  "chrono",
  "colorgrad",
- "cookie",
  "dotenvy",
  "figment",
  "jsonwebtoken",

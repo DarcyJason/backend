@@ -8,3 +8,5 @@ DEFINE FIELD OVERWRITE token_Type ON email_verification_tokens Type string;
 DEFINE FIELD OVERWRITE created_at ON email_verification_tokens Type datetime DEFAULT time::now() READONLY;
 DEFINE FIELD OVERWRITE expires_at ON email_verification_tokens Type datetime DEFAULT time::now();
 DEFINE FIELD OVERWRITE used ON email_verification_tokens Type bool DEFAULT false;
+
+DEFINE INDEX email_verification_token_index ON TABLE email_verification_tokens COLUMNS token UNIQUE;

@@ -15,20 +15,20 @@ pub trait RefreshTokenRepository {
 
 #[async_trait]
 impl RefreshTokenRepository for SurrealClient {
-    async fn create_refresh_token(&self, user_id: &str, refresh_token: &str) -> AppResult<()> {
+    async fn create_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()> {
         let sql = r#"
-            CREATE refresh_token CONTENT {
+            CREATE refresh_tokens CONTENT {
                 id: rand::uuid::v4(),
                 user_id: $user_id,
-                token: $refresh_token,
-                revoke: false,
+                token_value: $token_value,
+                is_revoked: false,
             }
         "#;
         let mut result = self
             .client
             .query(sql)
             .bind(("user_id", user_id.to_string()))
-            .bind(("refresh_token", refresh_token.to_string()))
+            .bind(("token_value", token_value.to_string()))
             .await?;
         let refresh_token: Option<RefreshToken> = result.take(0)?;
         match refresh_token {

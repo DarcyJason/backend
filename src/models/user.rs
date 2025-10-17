@@ -8,7 +8,7 @@ pub struct User {
     pub name: String,
     pub email: String,
     pub password: String,
-    pub role: String,
+    pub role: UserRole,
     pub salt: String,
     pub is_verified: bool,
     pub status: UserStatus,
@@ -17,9 +17,17 @@ pub struct User {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "PascalCase")]
+pub enum UserRole {
+    Admin,
+    User,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 pub enum UserStatus {
     Active,
+    Inactive,
     Deleted,
     Suspended,
     Banned,

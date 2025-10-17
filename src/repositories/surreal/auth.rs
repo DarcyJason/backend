@@ -6,7 +6,7 @@ use crate::{
         result::AppResult,
     },
     database::surreal::client::SurrealClient,
-    models::user::User,
+    models::user::{User, UserRole, UserStatus},
     utils::password::hash_password,
 };
 
@@ -30,6 +30,7 @@ impl AuthRepository for SurrealClient {
                 role: $role,
                 salt: $salt,
                 is_verified: false,
+                status: $status,
             }
         "#;
         let mut result = self
@@ -38,8 +39,9 @@ impl AuthRepository for SurrealClient {
             .bind(("name", name.to_string()))
             .bind(("email", email.to_string()))
             .bind(("password", password))
-            .bind(("role", "user".to_string()))
+            .bind(("role", UserRole::User))
             .bind(("salt", salt))
+            .bind(("status", UserStatus::Inactive))
             .await?;
         let user: Option<User> = result.take(0)?;
         match user {
