@@ -3,12 +3,14 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::custom::errors::{
-    device::DeviceErrorKind, refresh_token::RefreshTokenErrorKind, user::UserErrorKind,
-    validation::ValidationErrorKind,
+use crate::custom::{
+    errors::{
+        device::DeviceErrorKind, refresh_token::RefreshTokenErrorKind, user::UserErrorKind,
+        validation::ValidationErrorKind,
+    },
+    response::AppResponse,
 };
 
 pub mod device;
@@ -39,13 +41,6 @@ pub enum AppError {
     IOError(#[from] std::io::Error),
     #[error("Other error: {0}")]
     OtherError(#[from] Box<anyhow::Error>),
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ErrorResponse {
-    pub status: String,
-    pub code: u16,
-    pub message: String,
 }
 
 impl IntoResponse for AppError {
@@ -90,11 +85,7 @@ impl IntoResponse for AppError {
             AppError::IOError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::OtherError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
-        let body = ErrorResponse {
-            status: "err".to_string(),
-            code: status_code.as_u16(),
-            message,
-        };
+        let body = AppResponse::build("err".to_string(), status_code.as_u16(), message, None::<()>);
         (status_code, Json(body)).into_response()
     }
 }

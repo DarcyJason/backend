@@ -7,6 +7,6 @@ DEFINE FIELD OVERWRITE email ON users TYPE string;
 DEFINE FIELD OVERWRITE password ON users TYPE string;
 DEFINE FIELD OVERWRITE role ON users TYPE string;
 DEFINE FIELD OVERWRITE salt ON users TYPE string;
-DEFINE FIELD OVERWRITE is_verified ON users TYPE bool;
+DEFINE FIELD OVERWRITE is_verified ON users TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE created_at ON users TYPE datetime DEFAULT time::now() READONLY;
 DEFINE FIELD OVERWRITE updated_at ON users TYPE datetime DEFAULT time::now();

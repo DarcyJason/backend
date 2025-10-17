@@ -29,7 +29,7 @@ impl TrustedDeviceRepository for SurrealClient {
         ip: String,
     ) -> AppResult<()> {
         let sql = r#"
-            CREATE trusted_devices CONTENT {
+            CREATE devices CONTENT {
                 id: rand::uuid::v4(),
                 user_id: $user_id,
                 device: $device,
@@ -51,7 +51,7 @@ impl TrustedDeviceRepository for SurrealClient {
     }
     async fn find_trusted_device_by_email(&self, email: &str) -> AppResult<Device> {
         let sql = r#"
-            SELECT * FROM trusted_devices WHERE email = $email LIMIT 1
+            SELECT * FROM devices WHERE email = $email LIMIT 1
         "#;
         let mut result = self
             .client

@@ -1,0 +1,3 @@
+DEFINE TABLE OVERWRITE ip_blacklist SCHEMALESS;
+
+# DEFINE FIELD OVERWRITE field ON ip_blacklist;

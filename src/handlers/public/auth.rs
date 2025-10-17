@@ -3,9 +3,9 @@ use std::{net::SocketAddr, sync::Arc};
 use axum::{
     Json,
     extract::{ConnectInfo, OriginalUri, State},
-    http::StatusCode,
     response::IntoResponse,
 };
+use cookie::{Cookie, CookieJar};
 use tracing::{error, info, instrument};
 use validator::ValidateEmail;
 
@@ -15,12 +15,10 @@ use crate::{
             AppError, refresh_token::RefreshTokenErrorKind, user::UserErrorKind,
             validation::ValidationErrorKind,
         },
+        response::AppResponse,
         result::AppResult,
     },
-    dtos::{
-        requests::{login::LoginRequest, register::RegisterRequest},
-        responses::{login::LoginResponse, register::RegisterResponse},
-    },
+    dtos::requests::{login::LoginRequest, register::RegisterRequest},
     repositories::surreal::{auth::AuthRepository, refresh_token::RefreshTokenRepository},
     state::AppState,
     statics::regex::NAME_REGEX,
@@ -153,21 +151,17 @@ pub async fn register(
         "Finish Handling user registration successfully with email: {}",
         payload.email
     );
-    Ok((
-        StatusCode::OK,
-        Json(RegisterResponse {
-            status: "ok".to_string(),
-            code: StatusCode::OK.as_u16(),
-            message: "Register success".to_string(),
-        }),
-    )
-        .into_response())
+    Ok(AppResponse::default(
+        "Register success".to_string(),
+        None::<()>,
+    ))
 }
 
 #[instrument(skip(app_state))]
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
     uri: OriginalUri,
+    mut jar: CookieJar,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
@@ -231,19 +225,25 @@ pub async fn login(
     match app_state
         .db_client
         .surreal_client
-        .create_refresh_token(&user.id.id.to_raw(), refresh_token.as_str())
+        .create_refresh_token(&user.id.id.to_raw(), &refresh_token)
         .await
     {
         Ok(_) => {
+            let cookie = Cookie::build(("refresh_token", refresh_token))
+                .http_only(true)
+                .secure(true)
+                .same_site(cookie::SameSite::Strict)
+                .build();
+            let updated_jar = jar.add(cookie);
             info!("Login success with email {}", &user.email);
             Ok((
-                StatusCode::OK,
-                Json(LoginResponse {
-                    temp_token: "temp_token".to_string(),
-                    requires_verification: false,
-                    access_token: Some(access_token),
-                })
-                .into_response(),
+                updated_jar,
+                AppResponse::default(
+                    "Login Success".to_string(),
+                    Some(serde_json::json!({
+                        "access_token": access_token,
+                    })),
+                ),
             ))
         }
         Err(e) => {
@@ -254,3 +254,5 @@ pub async fn login(
         }
     }
 }
+
+pub async fn logout() {}
