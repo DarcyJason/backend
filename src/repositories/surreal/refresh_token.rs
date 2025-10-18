@@ -10,7 +10,8 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait RefreshTokenRepository {
-    async fn create_refresh_token(&self, user_id: &str, refresh_token: &str) -> AppResult<()>;
+    async fn create_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()>;
+    async fn delete_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()>;
 }
 
 #[async_trait]
@@ -21,7 +22,6 @@ impl RefreshTokenRepository for SurrealClient {
                 id: rand::uuid::v4(),
                 user_id: $user_id,
                 token_value: $token_value,
-                is_revoked: false,
             }
         "#;
         let mut result = self
@@ -35,6 +35,24 @@ impl RefreshTokenRepository for SurrealClient {
             Some(_) => Ok(()),
             None => Err(AppError::RefreshTokenError(
                 RefreshTokenErrorKind::CreateRefreshTokenFailed,
+            )),
+        }
+    }
+    async fn delete_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()> {
+        let sql = r#"
+            DELETE refresh_tokens WHERE user_id = $user_id AND token_value = $token_value
+        "#;
+        let mut result = self
+            .client
+            .query(sql)
+            .bind(("user_id", user_id.to_string()))
+            .bind(("token_value", token_value.to_string()))
+            .await?;
+        let deleted_result: Option<RefreshToken> = result.take(0)?;
+        match deleted_result {
+            Some(_) => Ok(()),
+            None => Err(AppError::RefreshTokenError(
+                RefreshTokenErrorKind::DeleteRefreshTokenFailed,
             )),
         }
     }

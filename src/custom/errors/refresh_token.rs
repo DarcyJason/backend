@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum RefreshTokenErrorKind {
     #[error("Create refresh token failed")]
     CreateRefreshTokenFailed,
+    #[error("Delete refresh token failed")]
+    DeleteRefreshTokenFailed,
 }

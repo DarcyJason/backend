@@ -14,7 +14,6 @@ pub struct RefreshToken {
     pub id: Thing,
     pub user_id: String,
     pub token_value: String,
-    pub is_revoked: bool,
     pub created_at: DateTime<Utc>,
     pub expired_at: DateTime<Utc>,
 }

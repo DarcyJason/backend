@@ -14,14 +14,14 @@ where
     pub status: String,
     pub code: u16,
     pub message: String,
-    pub data: Option<T>,
+    pub data: T,
 }
 
 impl<T> AppResponse<T>
 where
     T: Serialize,
 {
-    pub fn success(message: String, data: Option<T>) -> Self {
+    pub fn success(message: String, data: T) -> Self {
         AppResponse {
             status: "success".to_string(),
             code: StatusCode::OK.as_u16(),
@@ -29,7 +29,7 @@ where
             data,
         }
     }
-    pub fn error(code: u16, message: String, data: Option<T>) -> Self {
+    pub fn error(code: u16, message: String, data: T) -> Self {
         AppResponse {
             status: "error".to_string(),
             code,

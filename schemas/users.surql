@@ -12,4 +12,4 @@ DEFINE FIELD OVERWRITE status ON users TYPE string;
 DEFINE FIELD OVERWRITE created_at ON users TYPE datetime DEFAULT time::now() READONLY;
 DEFINE FIELD OVERWRITE updated_at ON users TYPE datetime DEFAULT time::now();
 
-DEFINE INDEX user_email_index ON TABLE users COLUMNS email UNIQUE;
+DEFINE INDEX OVERWRITE user_email_index ON TABLE users COLUMNS email UNIQUE;

@@ -6,6 +6,7 @@ use axum::{
     response::IntoResponse,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
+use serde_json::json;
 use tracing::{error, info, instrument};
 use validator::ValidateEmail;
 
@@ -18,7 +19,10 @@ use crate::{
         response::AppResponse,
         result::AppResult,
     },
-    dtos::requests::{login::LoginRequest, register::RegisterRequest},
+    dtos::{
+        requests::{login::LoginRequest, register::RegisterRequest},
+        responses::login::LoginResponseData,
+    },
     repositories::surreal::{auth::AuthRepository, refresh_token::RefreshTokenRepository},
     state::AppState,
     statics::regex::NAME_REGEX,
@@ -151,10 +155,7 @@ pub async fn register(
         "Finish Handling user registration successfully with email: {}",
         payload.email
     );
-    Ok(AppResponse::success(
-        "Register success".to_string(),
-        None::<()>,
-    ))
+    Ok(AppResponse::success("Register success".to_string(), ()))
 }
 
 #[instrument(skip(app_state))]
@@ -239,9 +240,10 @@ pub async fn login(
                 updated_jar,
                 AppResponse::success(
                     "Login Success".to_string(),
-                    Some(serde_json::json!({
-                        "access_token": access_token,
-                    })),
+                    json!(LoginResponseData {
+                        access_token: Some(access_token),
+                        requires_verification: false,
+                    }),
                 ),
             ))
         }
@@ -253,5 +255,3 @@ pub async fn login(
         }
     }
 }
-
-pub async fn logout() {}

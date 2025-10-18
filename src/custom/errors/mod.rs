@@ -78,6 +78,9 @@ impl IntoResponse for AppError {
                 RefreshTokenErrorKind::CreateRefreshTokenFailed => {
                     (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
                 }
+                RefreshTokenErrorKind::DeleteRefreshTokenFailed => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+                }
             },
             AppError::SurrealDBError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::RedisError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
@@ -85,7 +88,7 @@ impl IntoResponse for AppError {
             AppError::IOError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::OtherError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
-        let body = AppResponse::error(status_code.as_u16(), message, None::<()>);
+        let body = AppResponse::error(status_code.as_u16(), message, ());
         (status_code, Json(body)).into_response()
     }
 }
