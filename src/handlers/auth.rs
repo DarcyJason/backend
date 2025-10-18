@@ -39,7 +39,7 @@ pub async fn register(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<RegisterRequest>,
 ) -> AppResult<impl IntoResponse> {
-    info!("Start handling user registration");
+    info!("✅ Start handling user registration");
     if payload.name.is_empty() {
         return Err(AppError::ValidationError(
             ValidationErrorKind::ValidationFailed("Name can't be empty".to_string()),
@@ -135,7 +135,10 @@ pub async fn register(
         .await?
         .is_some()
     {
-        error!("Failed: user already exists with email {}", payload.email);
+        error!(
+            "❌ Failed: user already exists with email {}",
+            payload.email
+        );
         return Err(AppError::UserError(UserErrorKind::UserAlreadyExists));
     }
     match app_state
@@ -150,9 +153,9 @@ pub async fn register(
             return Err(AppError::UserError(UserErrorKind::CreateUserFailed));
         }
     }
-    info!("Start creating trusted device");
+    info!("✅ Start creating trusted device");
     info!(
-        "Finish Handling user registration successfully with email: {}",
+        "✅ Finish Handling user registration successfully with email: {}",
         payload.email
     );
     Ok(AppResponse::success("Register success".to_string(), ()))
@@ -165,7 +168,7 @@ pub async fn login(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
-    info!("Start handling user login");
+    info!("✅ Start handling user login");
     if payload.email.is_empty() {
         return Err(AppError::ValidationError(
             ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()),
@@ -229,13 +232,14 @@ pub async fn login(
         .await
     {
         Ok(_) => {
+            info!("✅ Start setting cookie with refresh_token");
             let cookie = Cookie::build(("refresh_token", refresh_token))
                 .http_only(true)
                 .secure(true)
                 .same_site(SameSite::Strict)
                 .build();
             let updated_jar = CookieJar::new().add(cookie);
-            info!("Login success with email {}", &user.email);
+            info!("✅ Login success with email {}", &user.email);
             Ok((
                 updated_jar,
                 AppResponse::success(
@@ -248,10 +252,15 @@ pub async fn login(
             ))
         }
         Err(e) => {
-            error!("Create refresh_token with email {} : {}", &user.email, e);
+            error!("❌ Create refresh_token with email {} : {}", &user.email, e);
             return Err(AppError::RefreshTokenError(
                 RefreshTokenErrorKind::CreateRefreshTokenFailed,
             ));
         }
     }
 }
+
+#[instrument]
+pub async fn forget_password() {}
+
+pub async fn reset_password() {}
