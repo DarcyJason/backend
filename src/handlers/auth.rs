@@ -3,10 +3,10 @@ use std::{net::SocketAddr, sync::Arc};
 use axum::{
     Json,
     extract::{ConnectInfo, OriginalUri, State},
+    http::{HeaderMap, header::AUTHORIZATION},
     response::IntoResponse,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
-use serde_json::json;
 use tracing::{error, info, instrument};
 use validator::ValidateEmail;
 
@@ -19,10 +19,7 @@ use crate::{
         response::AppResponse,
         result::AppResult,
     },
-    dtos::{
-        requests::{login::LoginRequest, register::RegisterRequest},
-        responses::login::LoginResponseData,
-    },
+    dtos::requests::{login::LoginRequest, register::RegisterRequest},
     repositories::surreal::{auth::AuthRepository, refresh_token::RefreshTokenRepository},
     state::AppState,
     statics::regex::NAME_REGEX,
@@ -232,7 +229,12 @@ pub async fn login(
         .await
     {
         Ok(_) => {
-            info!("✅ Start setting cookie with refresh_token");
+            info!("✅ Start setting access_token and refresh_token in response");
+            let mut headers = HeaderMap::new();
+            headers.insert(
+                AUTHORIZATION,
+                format!("Bearer {}", access_token).parse().unwrap(),
+            );
             let cookie = Cookie::build(("refresh_token", refresh_token))
                 .http_only(true)
                 .secure(true)
@@ -241,14 +243,9 @@ pub async fn login(
             let updated_jar = CookieJar::new().add(cookie);
             info!("✅ Login success with email {}", &user.email);
             Ok((
+                headers,
                 updated_jar,
-                AppResponse::success(
-                    "Login Success".to_string(),
-                    json!(LoginResponseData {
-                        access_token: Some(access_token),
-                        requires_verification: false,
-                    }),
-                ),
+                AppResponse::success("Login Success".to_string(), ()),
             ))
         }
         Err(e) => {
@@ -263,4 +260,5 @@ pub async fn login(
 #[instrument]
 pub async fn forget_password() {}
 
+#[instrument]
 pub async fn reset_password() {}

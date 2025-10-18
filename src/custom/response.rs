@@ -37,6 +37,14 @@ where
             data,
         }
     }
+    pub fn build(status: String, code: u16, message: String, data: T) -> Self {
+        AppResponse {
+            status,
+            code,
+            message,
+            data,
+        }
+    }
 }
 
 impl<T> IntoResponse for AppResponse<T>
