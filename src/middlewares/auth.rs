@@ -26,13 +26,8 @@ pub async fn auth(
         .headers()
         .get(AUTHORIZATION)
         .and_then(|auth_header| auth_header.to_str().ok())
-        .and_then(|auth_value| {
-            if auth_value.starts_with("Bearer ") {
-                Some(auth_value[7..].to_owned())
-            } else {
-                None
-            }
-        }) {
+        .and_then(|auth_value| auth_value.strip_prefix("Bearer ").map(|s| s.to_owned()))
+    {
         Some(token) => token,
         None => {
             return Err(AppError::AccessTokenError(
@@ -61,6 +56,6 @@ pub async fn auth(
             req.extensions_mut().insert(user);
             Ok(next.run(req).await)
         }
-        None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+        None => Err(AppError::UserError(UserErrorKind::UserNotFound)),
     }
 }
