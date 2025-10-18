@@ -7,12 +7,13 @@ use thiserror::Error;
 
 use crate::custom::{
     errors::{
-        device::DeviceErrorKind, refresh_token::RefreshTokenErrorKind, user::UserErrorKind,
-        validation::ValidationErrorKind,
+        access_token::AccessTokenErrorKind, device::DeviceErrorKind,
+        refresh_token::RefreshTokenErrorKind, user::UserErrorKind, validation::ValidationErrorKind,
     },
     response::AppResponse,
 };
 
+pub mod access_token;
 pub mod device;
 pub mod from;
 pub mod refresh_token;
@@ -29,6 +30,8 @@ pub enum AppError {
     UserError(#[from] UserErrorKind),
     #[error("Device error: {0}")]
     DeviceError(#[from] DeviceErrorKind),
+    #[error("Access token error: {0}")]
+    AccessTokenError(#[from] AccessTokenErrorKind),
     #[error("Refresh token error: {0}")]
     RefreshTokenError(#[from] RefreshTokenErrorKind),
     #[error("SurrealDB error: {0}")]
@@ -74,6 +77,14 @@ impl IntoResponse for AppError {
                     (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
                 }
             },
+            AppError::AccessTokenError(err) => match err {
+                AccessTokenErrorKind::AccessTokenNotFound => {
+                    (StatusCode::UNAUTHORIZED, self.to_string())
+                }
+                AccessTokenErrorKind::InvalidAccessToken => {
+                    (StatusCode::UNAUTHORIZED, self.to_string())
+                }
+            },
             AppError::RefreshTokenError(err) => match err {
                 RefreshTokenErrorKind::CreateRefreshTokenFailed => {
                     (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
@@ -88,7 +99,7 @@ impl IntoResponse for AppError {
             AppError::IOError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::OtherError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
-        let body = AppResponse::error(status_code.as_u16(), message, ());
+        let body = AppResponse::error(status_code.as_u16(), Some(message), ());
         (status_code, Json(body)).into_response()
     }
 }

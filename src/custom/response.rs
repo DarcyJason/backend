@@ -13,7 +13,7 @@ where
 {
     pub status: String,
     pub code: u16,
-    pub message: String,
+    pub message: Option<String>,
     pub data: T,
 }
 
@@ -21,7 +21,7 @@ impl<T> AppResponse<T>
 where
     T: Serialize,
 {
-    pub fn success(message: String, data: T) -> Self {
+    pub fn success(message: Option<String>, data: T) -> Self {
         AppResponse {
             status: "success".to_string(),
             code: StatusCode::OK.as_u16(),
@@ -29,7 +29,7 @@ where
             data,
         }
     }
-    pub fn error(code: u16, message: String, data: T) -> Self {
+    pub fn error(code: u16, message: Option<String>, data: T) -> Self {
         AppResponse {
             status: "error".to_string(),
             code,
@@ -37,7 +37,7 @@ where
             data,
         }
     }
-    pub fn build(status: String, code: u16, message: String, data: T) -> Self {
+    pub fn build(status: String, code: u16, message: Option<String>, data: T) -> Self {
         AppResponse {
             status,
             code,
@@ -68,7 +68,7 @@ where
                 let body = AppResponse {
                     status: "error".to_string(),
                     code: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                    message: "Internal Server Error".to_string(),
+                    message: Some("Internal Server Error".to_string()),
                     data: None::<()>,
                 };
                 (StatusCode::INTERNAL_SERVER_ERROR, Json(body)).into_response()

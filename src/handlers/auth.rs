@@ -155,7 +155,10 @@ pub async fn register(
         "✅ Finish Handling user registration successfully with email: {}",
         payload.email
     );
-    Ok(AppResponse::success("Register success".to_string(), ()))
+    Ok(AppResponse::success(
+        Some("Register success".to_string()),
+        (),
+    ))
 }
 
 #[instrument(skip(app_state))]
@@ -217,7 +220,7 @@ pub async fn login(
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
     let access_token = generate_access_token(
-        user.id.id.to_raw(),
+        user.id.to_string(),
         app_state.config.jwt_config.jwt_secret.as_bytes(),
         app_state.config.jwt_config.access_token_expires_in_seconds,
     )?;
@@ -225,7 +228,7 @@ pub async fn login(
     match app_state
         .db_client
         .surreal_client
-        .create_refresh_token(&user.id.id.to_raw(), &refresh_token)
+        .create_refresh_token(&user.id.to_string(), &refresh_token)
         .await
     {
         Ok(_) => {
@@ -245,7 +248,7 @@ pub async fn login(
             Ok((
                 headers,
                 updated_jar,
-                AppResponse::success("Login Success".to_string(), ()),
+                AppResponse::success(Some("Login Success".to_string()), ()),
             ))
         }
         Err(e) => {

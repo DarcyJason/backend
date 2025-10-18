@@ -34,9 +34,7 @@ async fn main() -> AppResult<()> {
         port
     );
     let app_state = Arc::new(AppState::new(config, db_client));
-    let router = api_routers()
-        .layer(cors(frontend_address))
-        .with_state(app_state);
+    let router = api_routers(app_state.clone()).layer(cors(frontend_address));
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     let listener = TcpListener::bind(&address).await?;
     axum::serve(

@@ -11,6 +11,8 @@ use async_trait::async_trait;
 #[async_trait]
 pub trait RefreshTokenRepository {
     async fn create_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()>;
+    async fn find_refresh_token_by_user_id(&self, user_id: &str)
+    -> AppResult<Option<RefreshToken>>;
     async fn delete_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()>;
 }
 
@@ -37,6 +39,21 @@ impl RefreshTokenRepository for SurrealClient {
                 RefreshTokenErrorKind::CreateRefreshTokenFailed,
             )),
         }
+    }
+    async fn find_refresh_token_by_user_id(
+        &self,
+        user_id: &str,
+    ) -> AppResult<Option<RefreshToken>> {
+        let sql = r#"
+            SELECT * FROM refresh_tokens WHERE user_id = <record> $user_id
+        "#;
+        let mut result = self
+            .client
+            .query(sql)
+            .bind(("user_id", user_id.to_string()))
+            .await?;
+        let refresh_token: Option<RefreshToken> = result.take(0)?;
+        Ok(refresh_token)
     }
     async fn delete_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()> {
         let sql = r#"

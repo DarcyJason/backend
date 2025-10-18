@@ -63,7 +63,7 @@ impl AuthRepository for SurrealClient {
     }
     async fn find_user_by_id(&self, id: &str) -> AppResult<Option<User>> {
         let sql = r#"
-            SELECT * FROM users WHERE id = $id LIMIT 1
+            SELECT * FROM users WHERE id = <record> $id LIMIT 1
         "#;
         let mut result = self.client.query(sql).bind(("id", id.to_string())).await?;
         let user: Option<User> = result.take(0)?;

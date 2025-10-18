@@ -1,14 +1,17 @@
-use std::sync::Arc;
 use axum::Router;
+use std::sync::Arc;
 
-use crate::{routers::{protected::protected_routers, public::public_routers}, state::AppState};
+use crate::{
+    routers::{auth::auth_routers, user::user_routers},
+    state::AppState,
+};
 
-pub mod protected;
-pub mod public;
+pub mod auth;
+pub mod user;
 
-pub fn api_routers() -> Router<Arc<AppState>> {
+pub fn api_routers(app_state: Arc<AppState>) -> Router {
     let all_router = Router::new()
-        .merge(public_routers())
-        .merge(protected_routers());
+        .merge(auth_routers(app_state.clone()))
+        .merge(user_routers(app_state));
     Router::new().nest("/api/v1", all_router)
 }
