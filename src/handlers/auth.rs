@@ -19,11 +19,17 @@ use crate::{
         response::AppResponse,
         result::AppResult,
     },
-    dtos::requests::{login::LoginRequest, register::RegisterRequest},
-    repositories::surreal::{auth::AuthRepository, refresh_token::RefreshTokenRepository},
+    dtos::{
+        requests::{login::LoginRequest, register::RegisterRequest},
+        responses::login::LoginResponseData,
+    },
+    repositories::surreal::{
+        auth::AuthRepository, device::DeviceRepository, refresh_token::RefreshTokenRepository,
+    },
     state::AppState,
     statics::regex::NAME_REGEX,
     utils::{
+        device::parse_user_agent_detailed,
         password::{compare_hashed_password, validate_password},
         token::{generate_access_token, generate_refresh_token},
     },
@@ -165,6 +171,7 @@ pub async fn register(
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
     uri: OriginalUri,
+    headers: HeaderMap,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
@@ -219,6 +226,22 @@ pub async fn login(
     if !compare_hashed_password(&payload.password, &user.password)? {
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
+    let user_agent = headers
+        .get("user-agent")
+        .and_then(|ua| ua.to_str().ok())
+        .unwrap_or("Unknown User-Agent");
+    let (user_agent, os, device) = parse_user_agent_detailed(user_agent);
+    let device = app_state
+        .db_client
+        .surreal_client
+        .create_device(
+            &user.id.to_string(),
+            user_agent,
+            os,
+            device,
+            addr.ip().to_string(),
+        )
+        .await?;
     let access_token = generate_access_token(
         user.id.to_string(),
         app_state.config.jwt_config.jwt_secret.as_bytes(),
@@ -248,7 +271,10 @@ pub async fn login(
             Ok((
                 headers,
                 updated_jar,
-                AppResponse::success(Some("Login Success".to_string()), ()),
+                AppResponse::success(
+                    Some("Login Success".to_string()),
+                    LoginResponseData { device },
+                ),
             ))
         }
         Err(e) => {
