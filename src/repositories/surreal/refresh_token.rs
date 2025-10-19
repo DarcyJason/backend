@@ -57,7 +57,7 @@ impl RefreshTokenRepository for SurrealClient {
     }
     async fn delete_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()> {
         let sql = r#"
-            DELETE refresh_tokens WHERE user_id = $user_id AND token_value = $token_value
+            DELETE refresh_tokens WHERE user_id = <record> $user_id AND token_value = $token_value
         "#;
         let mut result = self
             .client
