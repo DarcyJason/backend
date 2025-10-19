@@ -222,7 +222,7 @@ pub async fn login(
     let access_token = generate_access_token(
         user.id.to_string(),
         app_state.config.jwt_config.jwt_secret.as_bytes(),
-        app_state.config.jwt_config.access_token_expires_in_seconds,
+        app_state.config.jwt_config.jwt_expires_in_seconds,
     )?;
     let refresh_token = generate_refresh_token();
     match app_state

@@ -11,7 +11,7 @@ pub fn generate_access_token(
 ) -> AppResult<String> {
     let now = Utc::now();
     let iat = now.timestamp() as usize;
-    let exp = (now + Duration::minutes(expires_in_seconds)).timestamp() as usize;
+    let exp = (now + Duration::seconds(expires_in_seconds)).timestamp() as usize;
     let claims = TokenClaims { user_id, iat, exp };
     Ok(encode(
         &Header::default(),

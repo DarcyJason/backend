@@ -6,8 +6,7 @@ use crate::custom::result::AppResult;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JwtConfig {
     pub jwt_secret: String,
-    pub access_token_expires_in_seconds: i64,
-    pub refresh_token_expires_in_seconds: i64,
+    pub jwt_expires_in_seconds: i64,
 }
 
 impl JwtConfig {
