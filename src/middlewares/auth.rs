@@ -6,16 +6,23 @@ use axum::{
     middleware::Next,
     response::IntoResponse,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{
     custom::{
         errors::{AppError, access_token::AccessTokenErrorKind, user::UserErrorKind},
         result::AppResult,
     },
+    models::user::{User, UserRole},
     repositories::surreal::auth::AuthRepository,
     state::AppState,
     utils::token::validate_access_token,
 };
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JWTAuthMiddeware {
+    pub user: User,
+}
 
 pub async fn auth(
     State(app_state): State<Arc<AppState>>,
@@ -58,4 +65,19 @@ pub async fn auth(
         }
         None => Err(AppError::UserError(UserErrorKind::UserNotFound)),
     }
+}
+
+pub async fn role_check(
+    req: Request,
+    next: Next,
+    required_roles: Vec<UserRole>,
+) -> AppResult<impl IntoResponse> {
+    let user = req
+        .extensions()
+        .get::<JWTAuthMiddeware>()
+        .ok_or_else(|| AppError::UserError(UserErrorKind::UserNotFound))?;
+    if !required_roles.contains(&user.user.role) {
+        return Err(AppError::UserError(UserErrorKind::Unauthorized));
+    }
+    Ok(next.run(req).await)
 }

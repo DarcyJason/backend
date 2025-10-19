@@ -10,6 +10,8 @@ pub enum UserErrorKind {
     UserNotFound,
     #[error("Wrong password")]
     WrongPassword,
+    #[error("Unauthorized")]
+    Unauthorized,
     #[error("Failed to generate tokens")]
     TokenGenerationFailed,
 }

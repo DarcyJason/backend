@@ -65,6 +65,7 @@ impl IntoResponse for AppError {
                 UserErrorKind::UserAlreadyExists => (StatusCode::CONFLICT, self.to_string()),
                 UserErrorKind::UserNotFound => (StatusCode::NOT_FOUND, self.to_string()),
                 UserErrorKind::WrongPassword => (StatusCode::UNAUTHORIZED, self.to_string()),
+                UserErrorKind::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
                 UserErrorKind::TokenGenerationFailed => {
                     (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
                 }
