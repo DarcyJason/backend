@@ -14,4 +14,6 @@ pub enum UserErrorKind {
     Unauthorized,
     #[error("Failed to generate tokens")]
     TokenGenerationFailed,
+    #[error("Missing user agent")]
+    MissingUserAgent,
 }

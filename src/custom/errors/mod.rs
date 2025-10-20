@@ -69,6 +69,7 @@ impl IntoResponse for AppError {
                 UserErrorKind::TokenGenerationFailed => {
                     (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
                 }
+                UserErrorKind::MissingUserAgent => (StatusCode::BAD_REQUEST, self.to_string()),
             },
             AppError::DeviceError(err) => match err {
                 DeviceErrorKind::CreateDeviceFailed => {

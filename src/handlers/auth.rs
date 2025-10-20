@@ -1,12 +1,12 @@
-use std::{net::SocketAddr, sync::Arc};
-
 use axum::{
-    Json,
+    Extension, Json,
     extract::{ConnectInfo, OriginalUri, State},
     http::{HeaderMap, header::AUTHORIZATION},
     response::IntoResponse,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
+use std::{net::SocketAddr, sync::Arc};
+use time::Duration;
 use tracing::{error, info, instrument};
 use validator::ValidateEmail;
 
@@ -23,6 +23,7 @@ use crate::{
         requests::{login::LoginRequest, register::RegisterRequest},
         responses::login::LoginResponseData,
     },
+    models::user::User,
     repositories::surreal::{
         auth::AuthRepository, device::DeviceRepository, refresh_token::RefreshTokenRepository,
     },
@@ -167,7 +168,7 @@ pub async fn register(
     ))
 }
 
-#[instrument(skip(app_state))]
+#[instrument(skip(app_state, headers))]
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
     uri: OriginalUri,
@@ -226,10 +227,10 @@ pub async fn login(
     if !compare_hashed_password(&payload.password, &user.password)? {
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
-    let user_agent = headers
-        .get("user-agent")
-        .and_then(|ua| ua.to_str().ok())
-        .unwrap_or("Unknown User-Agent");
+    let user_agent = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
+        Some(user_agent) => user_agent,
+        None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
+    };
     let (user_agent, os, device) = parse_user_agent_detailed(user_agent);
     let device = app_state
         .db_client
@@ -261,12 +262,13 @@ pub async fn login(
                 AUTHORIZATION,
                 format!("Bearer {}", access_token).parse().unwrap(),
             );
-            let cookie = Cookie::build(("refresh_token", refresh_token))
+            let refresh_token_cookie = Cookie::build(("refresh_token", refresh_token))
                 .http_only(true)
                 .secure(true)
                 .same_site(SameSite::Strict)
+                .max_age(Duration::days(7))
                 .build();
-            let updated_jar = CookieJar::new().add(cookie);
+            let updated_jar = CookieJar::new().add(refresh_token_cookie);
             info!("✅ Login success with email {}", &user.email);
             Ok((
                 headers,
@@ -284,6 +286,44 @@ pub async fn login(
             ));
         }
     }
+}
+
+#[instrument(skip(app_state))]
+pub async fn logout(
+    State(app_state): State<Arc<AppState>>,
+    jar: CookieJar,
+    Extension(user): Extension<User>,
+) -> AppResult<impl IntoResponse> {
+    info!("✅ Start handling user logout for user_id: {}", user.id);
+    if let Some(cookie) = jar.get("refresh_token") {
+        let refresh_token = cookie.value().to_string();
+        // Attempt to delete the token from the database, but don't let failure block logout.
+        match app_state
+            .db_client
+            .surreal_client
+            .delete_refresh_token(&user.id.to_string(), &refresh_token)
+            .await
+        {
+            Ok(_) => info!("✅ Successfully deleted refresh token from database."),
+            Err(e) => error!(
+                "❌ Failed to delete refresh_token from DB for user_id {}: {}. Proceeding to clear cookie.",
+                &user.id, e
+            ),
+        }
+    }
+    let refresh_token_cookie = Cookie::build(("refresh_token", ""))
+        .path("/")
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .max_age(Duration::ZERO)
+        .build();
+    let updated_jar = jar.remove("refresh_token").add(refresh_token_cookie);
+    info!("✅ Logout success for user_id: {}", user.id);
+    Ok((
+        updated_jar,
+        AppResponse::success(Some("Logout Success".to_string()), ()),
+    ))
 }
 
 #[instrument]
