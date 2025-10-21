@@ -84,6 +84,7 @@ pub async fn register(
 #[instrument(skip(app_state, headers))]
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
+    jar: CookieJar,
     uri: OriginalUri,
     mut headers: HeaderMap,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -103,12 +104,6 @@ pub async fn login(
     if !compare_hashed_password(&payload.password, &user.password)? {
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
-    info!("✅ Start creating access_token");
-    let access_token = generate_access_token(
-        user.id.to_string(),
-        app_state.config.jwt_config.jwt_secret.as_bytes(),
-        app_state.config.jwt_config.jwt_expires_in_seconds,
-    )?;
     info!("✅ Start getting user device");
     let user_agent_str = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
         Some(user_agent) => user_agent,
@@ -161,36 +156,6 @@ pub async fn login(
             true,
         )
     };
-    info!("✅ Start creating refresh token");
-    let refresh_token_value = match app_state
-        .db_client
-        .surreal_client
-        .find_refresh_token_by_user_and_device(&user.id.to_string(), &device_id)
-        .await?
-    {
-        Some(token) => token.token_value,
-        None => {
-            let new_token_value = generate_refresh_token();
-            app_state
-                .db_client
-                .surreal_client
-                .create_refresh_token(&user.id.to_string(), &device_id, &new_token_value)
-                .await?;
-            new_token_value
-        }
-    };
-    let refresh_token_cookie = Cookie::build(("refresh_token", refresh_token_value))
-        .http_only(true)
-        .secure(true)
-        .same_site(SameSite::Strict)
-        .max_age(Duration::days(7))
-        .build();
-    info!("✅ Start creating login response");
-    headers.insert(
-        AUTHORIZATION,
-        format!("Bearer {}", access_token).parse().unwrap(),
-    );
-    let updated_jar = CookieJar::new().add(refresh_token_cookie);
     let response_device = if is_new_device {
         app_state
             .db_client
@@ -201,10 +166,56 @@ pub async fn login(
     } else {
         found_device.unwrap().clone()
     };
+    info!("✅ Start creating access_token");
+    if headers
+        .get(AUTHORIZATION)
+        .and_then(|header| header.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .is_none()
+    {
+        let access_token = generate_access_token(
+            user.id.to_string(),
+            app_state.config.jwt_config.jwt_secret.as_bytes(),
+            app_state.config.jwt_config.jwt_expires_in_seconds,
+        )?;
+        headers.insert(
+            AUTHORIZATION,
+            format!("Bearer {}", access_token).parse().unwrap(),
+        );
+    }
+    info!("✅ Start creating refresh token");
+    let jar = if jar.get("refresh_token").is_none() {
+        let refresh_token_value = match app_state
+            .db_client
+            .surreal_client
+            .find_refresh_token_by_user_and_device(&user.id.to_string(), &device_id)
+            .await?
+        {
+            Some(token) => token.token_value,
+            None => {
+                let new_token_value = generate_refresh_token();
+                app_state
+                    .db_client
+                    .surreal_client
+                    .create_refresh_token(&user.id.to_string(), &device_id, &new_token_value)
+                    .await?;
+                new_token_value
+            }
+        };
+        let refresh_token_cookie = Cookie::build(("refresh_token", refresh_token_value))
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Strict)
+            .max_age(Duration::days(7))
+            .build();
+        jar.add(refresh_token_cookie)
+    } else {
+        jar
+    };
     info!("✅ Login process completed for user {}", &user.email);
     Ok((
         headers,
-        updated_jar,
+        jar,
         AppResponse::success(
             Some(response_message),
             LoginResponseData {
