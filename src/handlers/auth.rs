@@ -85,7 +85,7 @@ pub async fn register(
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
     uri: OriginalUri,
-    headers: HeaderMap,
+    mut headers: HeaderMap,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
@@ -103,35 +103,17 @@ pub async fn login(
     if !compare_hashed_password(&payload.password, &user.password)? {
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
-    info!("✅ Start setting access_token and refresh_token in response");
-    let user_agent_str = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
-        Some(user_agent) => user_agent,
-        None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
-    };
+    info!("✅ Start creating access_token");
     let access_token = generate_access_token(
         user.id.to_string(),
         app_state.config.jwt_config.jwt_secret.as_bytes(),
         app_state.config.jwt_config.jwt_expires_in_seconds,
     )?;
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        AUTHORIZATION,
-        format!("Bearer {}", access_token).parse().unwrap(),
-    );
-    let refresh_token_value = generate_refresh_token();
-    let refresh_token = app_state
-        .db_client
-        .surreal_client
-        .create_refresh_token(&user.id.to_string(), &refresh_token_value)
-        .await?;
-    let refresh_token_cookie = Cookie::build(("refresh_token", refresh_token.token_value))
-        .http_only(true)
-        .secure(true)
-        .same_site(SameSite::Strict)
-        .max_age(Duration::days(7))
-        .build();
-    let updated_jar = CookieJar::new().add(refresh_token_cookie);
     info!("✅ Start getting user device");
+    let user_agent_str = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
+        Some(user_agent) => user_agent,
+        None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
+    };
     let (user_agent, os, device) = parse_user_agent_detailed(user_agent_str);
     let trusted_devices = app_state
         .db_client
@@ -141,22 +123,9 @@ pub async fn login(
     let found_device = trusted_devices
         .iter()
         .find(|d| d.user_agent == user_agent && d.os == os && d.device == device);
-    if let Some(trusted_device) = found_device {
-        if user.is_verified {
-            info!(
-                "✅ Login success with trusted device for user {}",
-                &user.email
-            );
-            return Ok((
-                headers,
-                updated_jar,
-                AppResponse::success(
-                    Some("login success".to_string()),
-                    LoginResponseData {
-                        device: trusted_device.clone(),
-                    },
-                ),
-            ));
+    let (device_id, response_message, is_new_device) = if let Some(trusted_device) = found_device {
+        let message = if user.is_verified {
+            format!("Login success with trusted device for user {}", &user.email)
         } else {
             let email_token = generate_email_token();
             app_state
@@ -164,21 +133,9 @@ pub async fn login(
                 .surreal_client
                 .create_email(&user.id.to_string(), TokenType::Verification, email_token)
                 .await?;
-            info!(
-                "✅ Found trusted device for unverified user, resent verification email to {}",
-                &user.email
-            );
-            return Ok((
-                    headers,
-                    updated_jar,
-                    AppResponse::success(
-                        Some("Your device is recognized, but your account is not verified. A new verification email has been sent.".to_string()),
-                        LoginResponseData {
-                            device: trusted_device.clone(),
-                        },
-                    ),
-                ));
-        }
+            "Your device is recognized, but your account is not verified. A new verification email has been sent.".to_string()
+        };
+        (trusted_device.id.to_string(), message, false)
     } else {
         let new_device = app_state
             .db_client
@@ -197,22 +154,64 @@ pub async fn login(
             .surreal_client
             .create_email(&user.id.to_string(), TokenType::Verification, email_token)
             .await?;
-        info!(
-            "✅ Created new device and sent verification email to {}",
-            &user.email
-        );
-        Ok((
-                headers,
-                updated_jar,
-                AppResponse::success(
-                    Some(
-                        "This is a new device. A verification email has been sent to you, please check it."
-                            .to_string(),
-                    ),
-                    LoginResponseData { device: new_device },
-                ),
-            ))
-    }
+        (
+            new_device.id.to_string(),
+            "This is a new device. A verification email has been sent to you, please check it."
+                .to_string(),
+            true,
+        )
+    };
+    info!("✅ Start creating refresh token");
+    let refresh_token_value = match app_state
+        .db_client
+        .surreal_client
+        .find_refresh_token_by_user_and_device(&user.id.to_string(), &device_id)
+        .await?
+    {
+        Some(token) => token.token_value,
+        None => {
+            let new_token_value = generate_refresh_token();
+            app_state
+                .db_client
+                .surreal_client
+                .create_refresh_token(&user.id.to_string(), &device_id, &new_token_value)
+                .await?;
+            new_token_value
+        }
+    };
+    let refresh_token_cookie = Cookie::build(("refresh_token", refresh_token_value))
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .max_age(Duration::days(7))
+        .build();
+    info!("✅ Start creating login response");
+    headers.insert(
+        AUTHORIZATION,
+        format!("Bearer {}", access_token).parse().unwrap(),
+    );
+    let updated_jar = CookieJar::new().add(refresh_token_cookie);
+    let response_device = if is_new_device {
+        app_state
+            .db_client
+            .surreal_client
+            .find_device_by_id(&device_id)
+            .await?
+            .unwrap()
+    } else {
+        found_device.unwrap().clone()
+    };
+    info!("✅ Login process completed for user {}", &user.email);
+    Ok((
+        headers,
+        updated_jar,
+        AppResponse::success(
+            Some(response_message),
+            LoginResponseData {
+                device: response_device,
+            },
+        ),
+    ))
 }
 
 #[instrument(skip(app_state, jar, user))]

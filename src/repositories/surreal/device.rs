@@ -21,6 +21,7 @@ pub trait DeviceRepository {
     ) -> AppResult<Device>;
     async fn distrust_device(&self, device_id: &str, user_id: &str) -> AppResult<()>;
     async fn find_trusted_devices_by_user_id(&self, user_id: &str) -> AppResult<Vec<Device>>;
+    async fn find_device_by_id(&self, device_id: &str) -> AppResult<Option<Device>>;
 }
 
 #[async_trait]
@@ -91,5 +92,18 @@ impl DeviceRepository for SurrealClient {
                 return Err(AppError::DeviceError(DeviceErrorKind::DeviceNotFound));
             }
         }
+    }
+
+    async fn find_device_by_id(&self, device_id: &str) -> AppResult<Option<Device>> {
+        let sql = r#"
+            SELECT * FROM devices WHERE id = <record> $device_id
+        "#;
+        let mut result = self
+            .client
+            .query(sql)
+            .bind(("device_id", device_id.to_string()))
+            .await?;
+        let device: Option<Device> = result.take(0)?;
+        Ok(device)
     }
 }
