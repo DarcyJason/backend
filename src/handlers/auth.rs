@@ -8,14 +8,11 @@ use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use std::{net::SocketAddr, sync::Arc};
 use time::Duration;
 use tracing::{error, info, instrument};
-use validator::ValidateEmail;
 
+use crate::utils::token::generate_email_token;
 use crate::{
     custom::{
-        errors::{
-            AppError, refresh_token::RefreshTokenErrorKind, user::UserErrorKind,
-            validation::ValidationErrorKind,
-        },
+        errors::{AppError, user::UserErrorKind},
         response::AppResponse,
         result::AppResult,
     },
@@ -28,12 +25,15 @@ use crate::{
         auth::AuthRepository, device::DeviceRepository, refresh_token::RefreshTokenRepository,
     },
     state::AppState,
-    statics::regex::NAME_REGEX,
     utils::{
         device::parse_user_agent_detailed,
-        password::{compare_hashed_password, validate_password},
+        password::compare_hashed_password,
         token::{generate_access_token, generate_refresh_token},
     },
+};
+use crate::{models::email::TokenType, validation::auth::validate_login_payload};
+use crate::{
+    repositories::surreal::email::EmailRepository, validation::auth::validate_register_payload,
 };
 
 #[instrument(skip(app_state))]
@@ -44,94 +44,7 @@ pub async fn register(
     Json(payload): Json<RegisterRequest>,
 ) -> AppResult<impl IntoResponse> {
     info!("✅ Start handling user registration");
-    if payload.name.is_empty() {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed("Name can't be empty".to_string()),
-        ));
-    }
-    if payload.name.len() > 20 {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Name can't be longer than 20 characters".to_string(),
-            ),
-        ));
-    }
-    if !NAME_REGEX.is_match(&payload.name.to_string()) {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Name must be letters, numbers or letters with numbers".to_string(),
-            ),
-        ));
-    }
-    if payload.email.is_empty() {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed("Email cannot be empty".to_string()),
-        ));
-    }
-    if !ValidateEmail::validate_email(&payload.email.to_string()) {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Email must be a valid email address".to_string(),
-            ),
-        ));
-    }
-    if payload.password.is_empty() {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed("Password can't be empty".to_string()),
-        ));
-    }
-    if payload.password.len() < 8 {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Password must be at least 8 characters long".to_string(),
-            ),
-        ));
-    }
-    if payload.password.len() > 20 {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Password must be at most 20 characters long".to_string(),
-            ),
-        ));
-    }
-    if !validate_password(&payload.password) {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Password must contain letters, numbers and special characters".to_string(),
-            ),
-        ));
-    }
-    if payload.password != payload.confirm_password {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed("Passwords do not match".to_string()),
-        ));
-    }
-    if payload.confirm_password.is_empty() {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed("Confirm password cannot be empty".to_string()),
-        ));
-    }
-    if payload.confirm_password.len() < 8 {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Confirm password must be at least 8 characters long".to_string(),
-            ),
-        ));
-    }
-    if payload.confirm_password.len() > 20 {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Confirm password must be at most 20 characters long".to_string(),
-            ),
-        ));
-    }
-    if !validate_password(&payload.confirm_password) {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Confirm password must contain letters, numbers and special characters".to_string(),
-            ),
-        ));
-    }
+    validate_register_payload(&payload)?;
     if app_state
         .db_client
         .surreal_client
@@ -177,44 +90,7 @@ pub async fn login(
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
     info!("✅ Start handling user login");
-    if payload.email.is_empty() {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()),
-        ));
-    }
-    if !ValidateEmail::validate_email(&payload.email.to_string()) {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Email must be a valid email address".to_string(),
-            ),
-        ));
-    }
-    if payload.password.is_empty() {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed("Password can't be empty".to_string()),
-        ));
-    }
-    if payload.password.len() < 8 {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Password must be at least 8 characters long".to_string(),
-            ),
-        ));
-    }
-    if payload.password.len() > 20 {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Password must be at most 20 characters long".to_string(),
-            ),
-        ));
-    }
-    if !validate_password(&payload.password) {
-        return Err(AppError::ValidationError(
-            ValidationErrorKind::ValidationFailed(
-                "Password must contain letters, numbers and special characters".to_string(),
-            ),
-        ));
-    }
+    validate_login_payload(&payload)?;
     let user = match app_state
         .db_client
         .surreal_client
@@ -227,68 +103,119 @@ pub async fn login(
     if !compare_hashed_password(&payload.password, &user.password)? {
         return Err(AppError::UserError(UserErrorKind::WrongPassword));
     }
-    let user_agent = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
+    info!("✅ Start setting access_token and refresh_token in response");
+    let user_agent_str = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
         Some(user_agent) => user_agent,
         None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
     };
-    let (user_agent, os, device) = parse_user_agent_detailed(user_agent);
-    let device = app_state
-        .db_client
-        .surreal_client
-        .create_device(
-            &user.id.to_string(),
-            user_agent,
-            os,
-            device,
-            addr.ip().to_string(),
-        )
-        .await?;
     let access_token = generate_access_token(
         user.id.to_string(),
         app_state.config.jwt_config.jwt_secret.as_bytes(),
         app_state.config.jwt_config.jwt_expires_in_seconds,
     )?;
-    let refresh_token = generate_refresh_token();
-    match app_state
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        AUTHORIZATION,
+        format!("Bearer {}", access_token).parse().unwrap(),
+    );
+    let refresh_token_value = generate_refresh_token();
+    let refresh_token = app_state
         .db_client
         .surreal_client
-        .create_refresh_token(&user.id.to_string(), &refresh_token)
-        .await
-    {
-        Ok(_) => {
-            info!("✅ Start setting access_token and refresh_token in response");
-            let mut headers = HeaderMap::new();
-            headers.insert(
-                AUTHORIZATION,
-                format!("Bearer {}", access_token).parse().unwrap(),
+        .create_refresh_token(&user.id.to_string(), &refresh_token_value)
+        .await?;
+    let refresh_token_cookie = Cookie::build(("refresh_token", refresh_token.token_value))
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .max_age(Duration::days(7))
+        .build();
+    let updated_jar = CookieJar::new().add(refresh_token_cookie);
+    info!("✅ Start getting user device");
+    let (user_agent, os, device) = parse_user_agent_detailed(user_agent_str);
+    let trusted_devices = app_state
+        .db_client
+        .surreal_client
+        .find_trusted_devices_by_user_id(&user.id.to_string())
+        .await?;
+    let found_device = trusted_devices
+        .iter()
+        .find(|d| d.user_agent == user_agent && d.os == os && d.device == device);
+    if let Some(trusted_device) = found_device {
+        if user.is_verified {
+            info!(
+                "✅ Login success with trusted device for user {}",
+                &user.email
             );
-            let refresh_token_cookie = Cookie::build(("refresh_token", refresh_token))
-                .http_only(true)
-                .secure(true)
-                .same_site(SameSite::Strict)
-                .max_age(Duration::days(7))
-                .build();
-            let updated_jar = CookieJar::new().add(refresh_token_cookie);
-            info!("✅ Login success with email {}", &user.email);
-            Ok((
+            return Ok((
                 headers,
                 updated_jar,
                 AppResponse::success(
-                    Some("Login Success".to_string()),
-                    LoginResponseData { device },
+                    Some("login success".to_string()),
+                    LoginResponseData {
+                        device: trusted_device.clone(),
+                    },
+                ),
+            ));
+        } else {
+            let email_token = generate_email_token();
+            app_state
+                .db_client
+                .surreal_client
+                .create_email(&user.id.to_string(), TokenType::Verification, email_token)
+                .await?;
+            info!(
+                "✅ Found trusted device for unverified user, resent verification email to {}",
+                &user.email
+            );
+            return Ok((
+                    headers,
+                    updated_jar,
+                    AppResponse::success(
+                        Some("Your device is recognized, but your account is not verified. A new verification email has been sent.".to_string()),
+                        LoginResponseData {
+                            device: trusted_device.clone(),
+                        },
+                    ),
+                ));
+        }
+    } else {
+        let new_device = app_state
+            .db_client
+            .surreal_client
+            .create_device(
+                &user.id.to_string(),
+                user_agent,
+                os,
+                device,
+                addr.ip().to_string(),
+            )
+            .await?;
+        let email_token = generate_email_token();
+        app_state
+            .db_client
+            .surreal_client
+            .create_email(&user.id.to_string(), TokenType::Verification, email_token)
+            .await?;
+        info!(
+            "✅ Created new device and sent verification email to {}",
+            &user.email
+        );
+        Ok((
+                headers,
+                updated_jar,
+                AppResponse::success(
+                    Some(
+                        "This is a new device. A verification email has been sent to you, please check it."
+                            .to_string(),
+                    ),
+                    LoginResponseData { device: new_device },
                 ),
             ))
-        }
-        Err(e) => {
-            error!("❌ Create refresh_token with email {} : {}", &user.email, e);
-            return Err(AppError::RefreshTokenError(
-                RefreshTokenErrorKind::CreateRefreshTokenFailed,
-            ));
-        }
     }
 }
 
-#[instrument(skip(app_state))]
+#[instrument(skip(app_state, jar, user))]
 pub async fn logout(
     State(app_state): State<Arc<AppState>>,
     jar: CookieJar,
@@ -326,8 +253,8 @@ pub async fn logout(
     ))
 }
 
-#[instrument]
-pub async fn forget_password() {}
+#[instrument(skip(_app_state))]
+pub async fn forget_password(State(_app_state): State<Arc<AppState>>) {}
 
 #[instrument]
 pub async fn reset_password() {}

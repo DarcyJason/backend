@@ -3,17 +3,18 @@ use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TokenClaims {
+pub struct Email {
+    pub id: Thing,
     pub user_id: String,
-    pub iat: usize,
-    pub exp: usize,
+    pub token_type: TokenType,
+    pub email_token: String,
+    pub created_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RefreshToken {
-    pub id: Thing,
-    pub user_id: String,
-    pub token_value: String,
-    pub created_at: DateTime<Utc>,
-    pub expires_at: DateTime<Utc>,
+#[serde(rename_all = "snake_case")]
+pub enum TokenType {
+    Verification,
+    PasswordReset,
 }

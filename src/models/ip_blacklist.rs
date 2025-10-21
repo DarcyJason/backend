@@ -8,5 +8,5 @@ pub struct IpBlacklist {
     pub ip: String,
     pub reason: String,
     pub created_at: DateTime<Utc>,
-    pub expired_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
 }

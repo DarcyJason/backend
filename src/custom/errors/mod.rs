@@ -12,6 +12,7 @@ use crate::custom::{
     },
     response::AppResponse,
 };
+use crate::custom::errors::email::EmailErrorKind;
 
 pub mod access_token;
 pub mod device;
@@ -19,6 +20,7 @@ pub mod from;
 pub mod refresh_token;
 pub mod user;
 pub mod validation;
+pub mod email;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -34,6 +36,8 @@ pub enum AppError {
     AccessTokenError(#[from] AccessTokenErrorKind),
     #[error("Refresh token error: {0}")]
     RefreshTokenError(#[from] RefreshTokenErrorKind),
+    #[error("Email error: {0}")]
+    EmailError(#[from] EmailErrorKind),
     #[error("SurrealDB error: {0}")]
     SurrealDBError(#[from] Box<surrealdb::Error>),
     #[error("Redis error: {0}")]
@@ -95,6 +99,11 @@ impl IntoResponse for AppError {
                     (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
                 }
             },
+            AppError::EmailError(err) => match err {
+                EmailErrorKind::CreateEmailFailed => {
+                    (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+                }
+            }
             AppError::SurrealDBError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::RedisError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::InvalidToken(_) => (StatusCode::UNAUTHORIZED, self.to_string()),

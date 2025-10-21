@@ -33,6 +33,6 @@ pub fn generate_refresh_token() -> String {
     Uuid::new_v4().to_string()
 }
 
-pub fn generate_verification_token() -> String {
+pub fn generate_email_token() -> String {
     Uuid::new_v4().simple().to_string()
 }
