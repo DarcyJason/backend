@@ -403,14 +403,11 @@ pub async fn reset_password(
         Some(email) => email,
         None => return Err(AppError::EmailError(EmailErrorKind::EmailNotFound)),
     };
-    if !compare_hashed_password(&payload.password, &user.password)? {
-        return Err(AppError::UserError(UserErrorKind::WrongPassword));
-    }
     if email.email_token == payload.token {
         app_state
             .db_client
             .surreal_client
-            .reset_password(&user.id.to_string(), &payload.password)
+            .reset_password(&user.id.to_string(), &payload.new_password)
             .await?;
     }
     Ok(AppResponse::success(

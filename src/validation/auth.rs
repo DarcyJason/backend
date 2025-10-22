@@ -197,26 +197,26 @@ pub fn validate_reset_password_payload(payload: &ResetPasswordRequest) -> AppRes
             ValidationErrorKind::ValidationFailed("Token can't be empty".to_string()),
         ));
     }
-    if payload.password.is_empty() {
+    if payload.new_password.is_empty() {
         return Err(AppError::ValidationError(
             ValidationErrorKind::ValidationFailed("Password can't be empty".to_string()),
         ));
     }
-    if payload.password.len() < 8 {
+    if payload.new_password.len() < 8 {
         return Err(AppError::ValidationError(
             ValidationErrorKind::ValidationFailed(
                 "Password must be at least 8 characters long".to_string(),
             ),
         ));
     }
-    if payload.password.len() > 20 {
+    if payload.new_password.len() > 20 {
         return Err(AppError::ValidationError(
             ValidationErrorKind::ValidationFailed(
                 "Password must be at most 20 characters long".to_string(),
             ),
         ));
     }
-    if !validate_password(&payload.password) {
+    if !validate_password(&payload.new_password) {
         return Err(AppError::ValidationError(
             ValidationErrorKind::ValidationFailed(
                 "Password must contain letters, numbers and special characters".to_string(),
@@ -249,7 +249,7 @@ pub fn validate_reset_password_payload(payload: &ResetPasswordRequest) -> AppRes
             ),
         ));
     }
-    if payload.password != payload.confirm_password {
+    if payload.new_password != payload.confirm_password {
         return Err(AppError::ValidationError(
             ValidationErrorKind::ValidationFailed("Passwords do not match".to_string()),
         ));

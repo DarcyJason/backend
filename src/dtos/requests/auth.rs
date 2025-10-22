@@ -29,6 +29,6 @@ pub struct ForgetPasswordRequest {
 pub struct ResetPasswordRequest {
     pub email: String,
     pub token: String,
-    pub password: String,
+    pub new_password: String,
     pub confirm_password: String,
 }

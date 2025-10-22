@@ -91,13 +91,15 @@ impl AuthRepository for SurrealClient {
         }
     }
     async fn reset_password(&self, user_id: &str, new_password: &str) -> AppResult<()> {
+        let (new_password, new_salt) = hash_password(new_password.to_string())?;
         let sql = r#"
-            UPDATE users SET password = $password WHERE id = <record> $user_id
+            UPDATE users SET password = $password, salt = $salt WHERE id = <record> $user_id
         "#;
         let mut result = self
             .client
             .query(sql)
             .bind(("password", new_password.to_string()))
+            .bind(("salt", new_salt))
             .bind(("user_id", user_id.to_string()))
             .await?;
         let user: Option<User> = result.take(0)?;
