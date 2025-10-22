@@ -6,7 +6,6 @@ use axum::{
     middleware::Next,
     response::IntoResponse,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::{
     custom::{
@@ -18,11 +17,6 @@ use crate::{
     state::AppState,
     utils::token::validate_access_token,
 };
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct JWTAuthMiddeware {
-    pub user: User,
-}
 
 pub async fn auth(
     State(app_state): State<Arc<AppState>>,
@@ -74,9 +68,9 @@ pub async fn role_check(
 ) -> AppResult<impl IntoResponse> {
     let user = req
         .extensions()
-        .get::<JWTAuthMiddeware>()
+        .get::<User>()
         .ok_or_else(|| AppError::UserError(UserErrorKind::UserNotFound))?;
-    if !required_roles.contains(&user.user.role) {
+    if !required_roles.contains(&user.role) {
         return Err(AppError::UserError(UserErrorKind::Unauthorized));
     }
     Ok(next.run(req).await)
