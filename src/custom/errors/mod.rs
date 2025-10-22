@@ -46,6 +46,8 @@ pub enum AppError {
     InvalidToken(#[from] jsonwebtoken::errors::Error),
     #[error("IO error: {0}")]
     IOError(#[from] std::io::Error),
+    #[error("Resend error: {0}")]
+    ReSendError(#[from] resend_rs::Error),
     #[error("Other error: {0}")]
     OtherError(#[from] Box<anyhow::Error>),
 }
@@ -109,6 +111,7 @@ impl IntoResponse for AppError {
             AppError::RedisError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::InvalidToken(_) => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::IOError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
+            AppError::ReSendError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::OtherError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
         let body = AppResponse::error(status_code.as_u16(), Some(message), ());
