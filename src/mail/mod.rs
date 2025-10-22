@@ -1,1 +1,2 @@
-pub mod sendmail;
+pub mod send_mail;
+pub mod templates;

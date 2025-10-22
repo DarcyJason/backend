@@ -9,17 +9,19 @@ use std::{net::SocketAddr, sync::Arc};
 use time::Duration;
 use tracing::{error, info, instrument};
 
-use crate::utils::token::generate_email_token;
 use crate::{
     custom::{
-        errors::{AppError, user::UserErrorKind},
+        errors::{AppError, email::EmailErrorKind, user::UserErrorKind},
         response::AppResponse,
         result::AppResult,
     },
     dtos::{
-        requests::{login::LoginRequest, register::RegisterRequest},
+        requests::auth::{
+            ForgetPasswordRequest, RegisterRequest, ResetPasswordRequest, VerifyUserRequest,
+        },
         responses::login::LoginResponseData,
     },
+    mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
     models::user::User,
     repositories::surreal::{
         auth::AuthRepository, device::DeviceRepository, refresh_token::RefreshTokenRepository,
@@ -30,7 +32,12 @@ use crate::{
         password::compare_hashed_password,
         token::{generate_access_token, generate_refresh_token},
     },
+    validation::auth::{
+        validate_forget_password_payload, validate_reset_password_payload,
+        validate_verify_user_payload,
+    },
 };
+use crate::{dtos::requests::auth::LoginRequest, utils::token::generate_email_token};
 use crate::{models::email::TokenType, validation::auth::validate_login_payload};
 use crate::{
     repositories::surreal::email::EmailRepository, validation::auth::validate_register_payload,
@@ -126,8 +133,23 @@ pub async fn login(
             app_state
                 .db_client
                 .surreal_client
-                .create_email(&user.id.to_string(), TokenType::Verification, email_token)
+                .create_email(
+                    &user.id.to_string(),
+                    TokenType::Verification,
+                    email_token.clone(),
+                )
                 .await?;
+            let html = VERIFICATION_EMAIL_HTML
+                .replace("{{username}}", &user.name)
+                .replace("{{email_token}}", &email_token);
+            let _email = send_mail(
+                "notnone@email.homeryland.com",
+                vec![&user.email],
+                "Verification",
+                &html,
+                &app_state.config.mail_server.resend_api_key,
+            )
+            .await;
             "Your device is recognized, but your account is not verified. A new verification email has been sent.".to_string()
         };
         (trusted_device.id.to_string(), message, false)
@@ -147,8 +169,23 @@ pub async fn login(
         app_state
             .db_client
             .surreal_client
-            .create_email(&user.id.to_string(), TokenType::Verification, email_token)
+            .create_email(
+                &user.id.to_string(),
+                TokenType::Verification,
+                email_token.clone(),
+            )
             .await?;
+        let html = VERIFICATION_EMAIL_HTML
+            .replace("{{username}}", &user.name)
+            .replace("{{email_token}}", &email_token);
+        let _email = send_mail(
+            "notnone@email.homeryland.com",
+            vec![&user.email],
+            "Verification",
+            &html,
+            &app_state.config.mail_server.resend_api_key,
+        )
+        .await;
         (
             new_device.id.to_string(),
             "This is a new device. A verification email has been sent to you, please check it."
@@ -263,8 +300,121 @@ pub async fn logout(
     ))
 }
 
-#[instrument(skip(_app_state))]
-pub async fn forget_password(State(_app_state): State<Arc<AppState>>) {}
+#[instrument(skip(app_state))]
+pub async fn verify_user(
+    State(app_state): State<Arc<AppState>>,
+    Json(payload): Json<VerifyUserRequest>,
+) -> AppResult<impl IntoResponse> {
+    validate_verify_user_payload(&payload)?;
+    let user = match app_state
+        .db_client
+        .surreal_client
+        .find_user_by_email(&payload.email)
+        .await?
+    {
+        Some(user) => user,
+        None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+    };
+    let email = match app_state
+        .db_client
+        .surreal_client
+        .find_verification_email_by_user_id(&user.id.to_string())
+        .await?
+    {
+        Some(email) => email,
+        None => return Err(AppError::EmailError(EmailErrorKind::EmailNotFound)),
+    };
+    if email.email_token == payload.token {
+        app_state
+            .db_client
+            .surreal_client
+            .user_verified(&user.id.to_string())
+            .await?;
+    }
+    Ok(AppResponse::success(
+        Some("Verify your account successfully".to_string()),
+        (),
+    ))
+}
 
-#[instrument]
-pub async fn reset_password() {}
+#[instrument(skip(app_state))]
+pub async fn forget_password(
+    State(app_state): State<Arc<AppState>>,
+    Json(payload): Json<ForgetPasswordRequest>,
+) -> AppResult<impl IntoResponse> {
+    validate_forget_password_payload(&payload)?;
+    let user = match app_state
+        .db_client
+        .surreal_client
+        .find_user_by_email(&payload.email)
+        .await?
+    {
+        Some(user) => user,
+        None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+    };
+    let email_token = generate_email_token();
+    app_state
+        .db_client
+        .surreal_client
+        .create_email(
+            &user.id.to_string(),
+            TokenType::PasswordReset,
+            email_token.clone(),
+        )
+        .await?;
+    let html = VERIFICATION_EMAIL_HTML
+        .replace("{{username}}", &user.name)
+        .replace("{{email_token}}", &email_token);
+    let _email = send_mail(
+        "notnone@email.homeryland.com",
+        vec![&user.email],
+        "Reset password",
+        &html,
+        &app_state.config.mail_server.resend_api_key,
+    )
+    .await;
+    Ok(AppResponse::success(
+        Some("An reset password email has been sent, please check your email".to_string()),
+        (),
+    ))
+}
+
+#[instrument(skip(app_state))]
+pub async fn reset_password(
+    State(app_state): State<Arc<AppState>>,
+    Json(payload): Json<ResetPasswordRequest>,
+) -> AppResult<impl IntoResponse> {
+    validate_reset_password_payload(&payload)?;
+    let user = match app_state
+        .db_client
+        .surreal_client
+        .find_user_by_email(&payload.email)
+        .await?
+    {
+        Some(user) => user,
+        None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+    };
+    let email = match app_state
+        .db_client
+        .surreal_client
+        .find_reset_password_email_by_user_id(&user.id.to_string())
+        .await?
+    {
+        Some(email) => email,
+        None => return Err(AppError::EmailError(EmailErrorKind::EmailNotFound)),
+    };
+    if !compare_hashed_password(&payload.password, &user.password)? {
+        return Err(AppError::UserError(UserErrorKind::WrongPassword));
+    }
+    if email.email_token == payload.token {
+        app_state
+            .db_client
+            .surreal_client
+            .reset_password(&user.id.to_string(), &payload.password)
+            .await?;
+    }
+    Ok(AppResponse::success(
+        Some("Reset your password successfully".to_string()),
+        (),
+    ))
+}

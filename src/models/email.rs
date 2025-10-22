@@ -13,7 +13,7 @@ pub struct Email {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "PascalCase")]
 pub enum TokenType {
     Verification,
     PasswordReset,

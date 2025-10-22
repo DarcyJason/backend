@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum EmailErrorKind {
     #[error("Create email failed")]
     CreateEmailFailed,
+    #[error("Email not found")]
+    EmailNotFound,
 }

@@ -5,6 +5,7 @@ use axum::{
 };
 use thiserror::Error;
 
+use crate::custom::errors::email::EmailErrorKind;
 use crate::custom::{
     errors::{
         access_token::AccessTokenErrorKind, device::DeviceErrorKind,
@@ -12,15 +13,14 @@ use crate::custom::{
     },
     response::AppResponse,
 };
-use crate::custom::errors::email::EmailErrorKind;
 
 pub mod access_token;
 pub mod device;
+pub mod email;
 pub mod from;
 pub mod refresh_token;
 pub mod user;
 pub mod validation;
-pub mod email;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -103,7 +103,8 @@ impl IntoResponse for AppError {
                 EmailErrorKind::CreateEmailFailed => {
                     (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
                 }
-            }
+                EmailErrorKind::EmailNotFound => (StatusCode::NOT_FOUND, self.to_string()),
+            },
             AppError::SurrealDBError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::RedisError(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AppError::InvalidToken(_) => (StatusCode::UNAUTHORIZED, self.to_string()),

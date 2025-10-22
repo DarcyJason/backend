@@ -1,3 +1,3 @@
+pub mod auth;
 pub mod email;
-pub mod login;
-pub mod register;
+pub mod user;
