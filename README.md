@@ -7,7 +7,7 @@
 ```sh
 docker run -d --name surrealdb -p 10086:8000 -v ~/surrealdb:/data surrealdb/surrealdb:latest start --user root --pass root rocksdb:/data/mydatabase.db
 ```
-You can download the [Surrealist](https://surrealdb.com/surrealist) to your local machine for controlling SurrealDB in GUI.
+You can download the [Surrealist](https://surrealdb.com/surrealist) to your local machine if you want to use SurrealDB in GUI.
 
 ### 2. Install SurrealDB Migrations
 
