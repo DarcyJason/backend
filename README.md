@@ -18,7 +18,7 @@ cargo install surrealdb-migrations
 ### 3. Run migrations
 
 ```sh
-surrealdb-migrations run
+surrealdb-migrations apply
 ```
 
 ### 4. Install Redis
