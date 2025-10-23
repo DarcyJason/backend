@@ -49,7 +49,7 @@ impl EmailRepository for SurrealClient {
     }
     async fn find_verification_email_by_user_id(&self, user_id: &str) -> AppResult<Option<Email>> {
         let sql = r#"
-            SELECT * FROM email WHERE user_id = $user_id AND token_type = 'Verification'
+            SELECT * FROM email WHERE user_id = $user_id AND token_type = 'Verification' ORDER BY created_at DESC LIMIT 1
         "#;
         let mut result = self
             .client

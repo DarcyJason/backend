@@ -88,12 +88,12 @@ pub async fn register(
     ))
 }
 
-#[instrument(skip(app_state, headers))]
+#[instrument(skip(app_state, headers, jar))]
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
+    headers: HeaderMap,
     jar: CookieJar,
     uri: OriginalUri,
-    mut headers: HeaderMap,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
@@ -134,14 +134,15 @@ pub async fn login(
             &app_state.config.mail_server.resend_api_key,
         )
         .await?;
+        let response_headers = HeaderMap::new();
         return Ok((
-            headers,
+            response_headers,
             jar,
             AppResponse::success(Some("Check your email".to_string()), None),
         ));
     }
     info!("✅ Start getting user device");
-    let user_agent_str = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
+    let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
         Some(user_agent) => user_agent,
         None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
     };
@@ -179,8 +180,9 @@ pub async fn login(
                 &app_state.config.mail_server.resend_api_key,
             )
             .await?;
+            let response_headers = HeaderMap::new();
             return Ok((
-                headers,
+                response_headers,
                 jar,
                 AppResponse::success(Some("Check your email".to_string()), None),
             ));
@@ -192,7 +194,8 @@ pub async fn login(
         app_state.config.jwt_config.jwt_secret.as_bytes(),
         app_state.config.jwt_config.jwt_expires_in_seconds,
     )?;
-    headers.insert(
+    let mut response_headers = HeaderMap::new();
+    response_headers.insert(
         AUTHORIZATION,
         format!("Bearer {}", access_token).parse().unwrap(),
     );
@@ -226,7 +229,7 @@ pub async fn login(
         .build();
     let jar = jar.add(refresh_token_cookie);
     Ok((
-        headers,
+        response_headers,
         jar,
         AppResponse::success(
             Some(format!("Login successfully, {}", user.email)),
@@ -306,7 +309,7 @@ pub async fn verify_user(
             .user_verified(&user.id.to_string())
             .await?;
     }
-    let user_agent_str = match headers.get("user-agent").and_then(|ua| ua.to_str().ok()) {
+    let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
         Some(user_agent) => user_agent,
         None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
     };

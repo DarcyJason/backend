@@ -47,8 +47,8 @@ impl RefreshTokenRepository for SurrealClient {
             .bind(("device_id", device_id.to_string()))
             .bind(("token_value", token_value.to_string()))
             .await?;
-        let refresh_token: Option<RefreshToken> = result.take(0)?;
-        match refresh_token {
+        let mut refresh_token: Vec<RefreshToken> = result.take(0)?;
+        match refresh_token.pop() {
             Some(refresh_token) => Ok(refresh_token),
             None => Err(AppError::RefreshTokenError(
                 RefreshTokenErrorKind::CreateRefreshTokenFailed,
@@ -69,8 +69,8 @@ impl RefreshTokenRepository for SurrealClient {
             .bind(("user_id", user_id.to_string()))
             .bind(("device_id", device_id.to_string()))
             .await?;
-        let refresh_token: Option<RefreshToken> = result.take(0)?;
-        Ok(refresh_token)
+        let mut refresh_token: Vec<RefreshToken> = result.take(0)?;
+        Ok(refresh_token.pop())
     }
     async fn delete_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()> {
         let sql = r#"
@@ -82,12 +82,12 @@ impl RefreshTokenRepository for SurrealClient {
             .bind(("user_id", user_id.to_string()))
             .bind(("token_value", token_value.to_string()))
             .await?;
-        let deleted_result: Option<RefreshToken> = result.take(0)?;
-        match deleted_result {
-            Some(_) => Ok(()),
-            None => Err(AppError::RefreshTokenError(
+        let deleted_result: Vec<RefreshToken> = result.take(0)?;
+        if deleted_result.is_empty() {
+            return Err(AppError::RefreshTokenError(
                 RefreshTokenErrorKind::DeleteRefreshTokenFailed,
-            )),
+            ));
         }
+        Ok(())
     }
 }

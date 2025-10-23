@@ -54,8 +54,8 @@ impl DeviceRepository for SurrealClient {
             .bind(("device", device))
             .bind(("ip", ip))
             .await?;
-        let device: Option<Device> = result.take(0)?;
-        match device {
+        let mut device: Vec<Device> = result.take(0)?;
+        match device.pop() {
             Some(device) => Ok(device),
             None => Err(AppError::DeviceError(DeviceErrorKind::CreateDeviceFailed)),
         }
@@ -70,28 +70,23 @@ impl DeviceRepository for SurrealClient {
             .bind(("device_id", device_id.to_string()))
             .bind(("user_id", user_id.to_string()))
             .await?;
-        let updated_device: Option<Device> = result.take(0)?;
-        match updated_device {
+        let mut updated_device: Vec<Device> = result.take(0)?;
+        match updated_device.pop() {
             Some(_) => Ok(()),
             None => Err(AppError::DeviceError(DeviceErrorKind::DeviceNotFound)),
         }
     }
     async fn find_trusted_devices_by_user_id(&self, user_id: &str) -> AppResult<Vec<Device>> {
         let sql = r#"
-            SELECT * FROM devices WHERE user_id = <record> $user_id AND is_trusted = true
+            SELECT * FROM devices WHERE user_id = $user_id AND is_trusted = true
         "#;
         let mut result = self
             .client
             .query(sql)
             .bind(("user_id", user_id.to_string()))
             .await?;
-        let trusted_device: Option<Vec<Device>> = result.take(0)?;
-        match trusted_device {
-            Some(trusted_device) => Ok(trusted_device),
-            None => {
-                return Err(AppError::DeviceError(DeviceErrorKind::DeviceNotFound));
-            }
-        }
+        let trusted_device: Vec<Device> = result.take(0)?;
+        Ok(trusted_device)
     }
 
     async fn find_device_by_id(&self, device_id: &str) -> AppResult<Option<Device>> {
@@ -103,7 +98,7 @@ impl DeviceRepository for SurrealClient {
             .query(sql)
             .bind(("device_id", device_id.to_string()))
             .await?;
-        let device: Option<Device> = result.take(0)?;
-        Ok(device)
+        let mut device: Vec<Device> = result.take(0)?;
+        Ok(device.pop())
     }
 }
