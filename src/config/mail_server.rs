@@ -5,6 +5,7 @@ use crate::custom::result::AppResult;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MailServerConfig {
+    pub from_email: String,
     pub resend_api_key: String,
 }
 

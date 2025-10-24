@@ -36,7 +36,7 @@ docker run --name redis \
 cp .env.example .env
 ```
 
-Configure the RESEND_API_KEY in the .env file.
+Configure the .env file.
 
 ### 6. Run the backend
 
