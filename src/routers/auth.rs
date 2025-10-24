@@ -3,10 +3,10 @@ use std::sync::Arc;
 use axum::{Router, middleware, routing::post};
 
 use crate::{
+    core::app_state::AppState,
     handlers::auth::{forget_password, login, logout, register, reset_password, verify_user},
     middlewares::auth::{auth, role_check},
     models::user::UserRole,
-    state::AppState,
 };
 
 pub fn auth_routers(app_state: Arc<AppState>) -> Router {

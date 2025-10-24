@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use crate::{
+    core::app_state::AppState,
     custom::{errors::AppError, result::AppResult},
     repositories::{
         redis::health::HealthRepository,
         surreal::health::HealthRepository as SurrealHealthRepository,
     },
-    state::AppState,
 };
 use anyhow::anyhow;
 use axum::{extract::State, response::IntoResponse};

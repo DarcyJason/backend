@@ -2,8 +2,8 @@ use axum::Router;
 use std::sync::Arc;
 
 use crate::{
+    core::app_state::AppState,
     routers::{auth::auth_routers, health::health_router, user::user_routers},
-    state::AppState,
 };
 
 pub mod auth;

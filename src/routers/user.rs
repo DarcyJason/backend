@@ -3,10 +3,10 @@ use std::sync::Arc;
 use axum::{Router, middleware, routing::get};
 
 use crate::{
+    core::app_state::AppState,
     handlers::user::get_me,
     middlewares::auth::{auth, role_check},
     models::user::UserRole,
-    state::AppState,
 };
 
 pub fn user_routers(app_state: Arc<AppState>) -> Router {

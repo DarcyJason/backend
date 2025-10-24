@@ -436,7 +436,6 @@ dependencies = [
  "regex",
  "resend-rs",
  "serde",
- "serde_json",
  "surrealdb",
  "thiserror 2.0.17",
  "time",

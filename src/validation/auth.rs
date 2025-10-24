@@ -9,7 +9,7 @@ use crate::{
         ForgetPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest,
         VerifyUserRequest,
     },
-    statics::regex::NAME_REGEX,
+    lazy::regex::NAME_REGEX,
     utils::password::validate_password,
 };
 

@@ -8,13 +8,13 @@ use axum::{
 };
 
 use crate::{
+    core::app_state::AppState,
     custom::{
         errors::{AppError, access_token::AccessTokenErrorKind, user::UserErrorKind},
         result::AppResult,
     },
     models::user::{User, UserRole},
     repositories::surreal::auth::AuthRepository,
-    state::AppState,
     utils::token::validate_access_token,
 };
 

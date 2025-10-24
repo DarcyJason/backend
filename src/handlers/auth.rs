@@ -10,6 +10,7 @@ use time::Duration;
 use tracing::{error, info, instrument};
 
 use crate::{
+    core::app_state::AppState,
     custom::{
         errors::{AppError, email::EmailErrorKind, user::UserErrorKind},
         response::AppResponse,
@@ -26,7 +27,6 @@ use crate::{
     repositories::surreal::{
         auth::AuthRepository, device::DeviceRepository, refresh_token::RefreshTokenRepository,
     },
-    state::AppState,
     utils::{
         device::parse_user_agent_detailed,
         password::compare_hashed_password,

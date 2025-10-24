@@ -4,9 +4,13 @@ use std::{
 };
 
 use backend::{
-    config::AppConfig, constants::logo::LOGO, cors::cors, custom::result::AppResult,
-    database::client::DBClient, log::logger, routers::api_routers, shutdown::shutdown_signal,
-    state::AppState, utils::color::gradient_text,
+    config::AppConfig,
+    constants::logo::LOGO,
+    core::{app_state::AppState, cors::cors, logger::logger, shutdown::shutdown_signal},
+    custom::result::AppResult,
+    database::client::DBClient,
+    routers::api_routers,
+    utils::color::gradient_text,
 };
 use dotenvy::dotenv;
 use tokio::net::TcpListener;
