@@ -3,7 +3,7 @@ use crate::custom::result::AppResult;
 use crate::database::redis::client::RedisClient;
 use crate::database::surreal::client::SurrealClient;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DBClient {
     pub surreal_client: SurrealClient,
     pub redis_client: RedisClient,

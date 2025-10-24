@@ -6,7 +6,7 @@ use surrealdb::{
 
 use crate::{config::surreal_server::SurrealServerConfig, custom::result::AppResult};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SurrealClient {
     pub client: Surreal<Client>,
 }

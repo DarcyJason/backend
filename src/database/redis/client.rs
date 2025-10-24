@@ -1,7 +1,7 @@
 use crate::{config::redis_server::RedisServerConfig, custom::result::AppResult};
 use redis::aio::MultiplexedConnection;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RedisClient {
     pub conn: MultiplexedConnection,
 }

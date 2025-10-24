@@ -9,6 +9,7 @@ use std::{net::SocketAddr, sync::Arc};
 use time::Duration;
 use tracing::{error, info, instrument};
 
+use crate::repositories::surreal::email::EmailRepository;
 use crate::{
     core::app_state::AppState,
     custom::{
@@ -39,9 +40,6 @@ use crate::{
 };
 use crate::{dtos::requests::auth::LoginRequest, utils::token::generate_email_token};
 use crate::{models::email::TokenType, validation::auth::validate_login_payload};
-use crate::{
-    repositories::surreal::email::EmailRepository, validation::auth::validate_register_payload,
-};
 
 #[instrument(skip(app_state))]
 pub async fn register(
@@ -51,41 +49,7 @@ pub async fn register(
     Json(payload): Json<RegisterRequest>,
 ) -> AppResult<impl IntoResponse> {
     info!("✅ Start handling user registration");
-    validate_register_payload(&payload)?;
-    if app_state
-        .db_client
-        .surreal_client
-        .find_user_by_email(&payload.email)
-        .await?
-        .is_some()
-    {
-        error!(
-            "❌ Failed: user already exists with email {}",
-            payload.email
-        );
-        return Err(AppError::UserError(UserErrorKind::UserAlreadyExists));
-    }
-    match app_state
-        .db_client
-        .surreal_client
-        .create_user(&payload.name, &payload.email, &payload.password)
-        .await
-    {
-        Ok(_) => info!("Create user successfully"),
-        Err(_) => {
-            error!("Create user failed");
-            return Err(AppError::UserError(UserErrorKind::CreateUserFailed));
-        }
-    }
-    info!("✅ Start creating trusted device");
-    info!(
-        "✅ Finish Handling user registration successfully with email: {}",
-        payload.email
-    );
-    Ok(AppResponse::success(
-        Some("Register success".to_string()),
-        None::<()>,
-    ))
+    app_state.auth_service.register(payload).await
 }
 
 #[instrument(skip(app_state, headers, jar))]
