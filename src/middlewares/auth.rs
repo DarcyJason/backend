@@ -65,7 +65,7 @@ pub async fn role_check(
     let user = req
         .extensions()
         .get::<User>()
-        .ok_or_else(|| UserErrorKind::UserNotFound)?;
+        .ok_or(UserErrorKind::UserNotFound)?;
     if !required_roles.contains(&user.role) {
         return Err(UserErrorKind::Unauthorized.into());
     }
