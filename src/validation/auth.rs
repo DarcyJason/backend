@@ -6,8 +6,7 @@ use crate::{
         ForgetPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest,
         VerifyUserRequest,
     },
-    lazy::regex::NAME_REGEX,
-    utils::password::validate_password,
+    lazy::regex::{NAME_REGEX, PASSWORD_REGEX},
 };
 
 pub fn validate_register_payload(payload: &RegisterRequest) -> AppResult<()> {
@@ -22,7 +21,7 @@ pub fn validate_register_payload(payload: &RegisterRequest) -> AppResult<()> {
         )
         .into());
     }
-    if !NAME_REGEX.is_match(&payload.name.to_string()) {
+    if !NAME_REGEX.is_match(&payload.name).unwrap_or(false) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Name must be letters, numbers or letters with numbers".to_string(),
         )
@@ -33,7 +32,7 @@ pub fn validate_register_payload(payload: &RegisterRequest) -> AppResult<()> {
             ValidationErrorKind::ValidationFailed("Email cannot be empty".to_string()).into(),
         );
     }
-    if !ValidateEmail::validate_email(&payload.email.to_string()) {
+    if !ValidateEmail::validate_email(&payload.email) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Email must be a valid email address".to_string(),
         )
@@ -56,7 +55,7 @@ pub fn validate_register_payload(payload: &RegisterRequest) -> AppResult<()> {
         )
         .into());
     }
-    if !validate_password(&payload.password) {
+    if !PASSWORD_REGEX.is_match(&payload.password).unwrap_or(false) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Password must contain letters, numbers and special characters".to_string(),
         )
@@ -80,7 +79,10 @@ pub fn validate_register_payload(payload: &RegisterRequest) -> AppResult<()> {
         )
         .into());
     }
-    if !validate_password(&payload.confirm_password) {
+    if !PASSWORD_REGEX
+        .is_match(&payload.confirm_password)
+        .unwrap_or(false)
+    {
         return Err(ValidationErrorKind::ValidationFailed(
             "Confirm password must contain letters, numbers and special characters".to_string(),
         )
@@ -100,7 +102,7 @@ pub fn validate_login_payload(payload: &LoginRequest) -> AppResult<()> {
             ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()).into(),
         );
     }
-    if !ValidateEmail::validate_email(&payload.email.to_string()) {
+    if !ValidateEmail::validate_email(&payload.email) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Email must be a valid email address".to_string(),
         )
@@ -123,7 +125,7 @@ pub fn validate_login_payload(payload: &LoginRequest) -> AppResult<()> {
         )
         .into());
     }
-    if !validate_password(&payload.password) {
+    if !PASSWORD_REGEX.is_match(&payload.password).unwrap_or(false) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Password must contain letters, numbers and special characters".to_string(),
         )
@@ -138,7 +140,7 @@ pub fn validate_verify_user_payload(payload: &VerifyUserRequest) -> AppResult<()
             ValidationErrorKind::ValidationFailed("Token can't be empty".to_string()).into(),
         );
     }
-    if !ValidateEmail::validate_email(&payload.email.to_string()) {
+    if !ValidateEmail::validate_email(&payload.email) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Email must be a valid email address".to_string(),
         )
@@ -153,7 +155,7 @@ pub fn validate_forget_password_payload(payload: &ForgetPasswordRequest) -> AppR
             ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()).into(),
         );
     }
-    if !ValidateEmail::validate_email(&payload.email.to_string()) {
+    if !ValidateEmail::validate_email(&payload.email) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Email must be a valid email address".to_string(),
         )
@@ -168,7 +170,7 @@ pub fn validate_reset_password_payload(payload: &ResetPasswordRequest) -> AppRes
             ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()).into(),
         );
     }
-    if !ValidateEmail::validate_email(&payload.email.to_string()) {
+    if !ValidateEmail::validate_email(&payload.email) {
         return Err(ValidationErrorKind::ValidationFailed(
             "Email must be a valid email address".to_string(),
         )
@@ -196,7 +198,10 @@ pub fn validate_reset_password_payload(payload: &ResetPasswordRequest) -> AppRes
         )
         .into());
     }
-    if !validate_password(&payload.new_password) {
+    if !PASSWORD_REGEX
+        .is_match(&payload.new_password)
+        .unwrap_or(false)
+    {
         return Err(ValidationErrorKind::ValidationFailed(
             "Password must contain letters, numbers and special characters".to_string(),
         )
@@ -220,7 +225,10 @@ pub fn validate_reset_password_payload(payload: &ResetPasswordRequest) -> AppRes
         )
         .into());
     }
-    if !validate_password(&payload.confirm_password) {
+    if !PASSWORD_REGEX
+        .is_match(&payload.confirm_password)
+        .unwrap_or(false)
+    {
         return Err(ValidationErrorKind::ValidationFailed(
             "Confirm password must contain letters, numbers and special characters".to_string(),
         )

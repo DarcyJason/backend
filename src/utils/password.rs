@@ -25,11 +25,3 @@ pub fn compare_hashed_password(password: &str, hashed_password: &str) -> AppResu
         .is_ok_and(|_| true);
     Ok(is_password_match)
 }
-
-pub fn validate_password(password: &str) -> bool {
-    password.chars().any(|c| c.is_ascii_digit())
-        && password.chars().any(|c| c.is_ascii_alphabetic())
-        && password
-            .chars()
-            .any(|c| "!@#$%^&*()_+-=[]{}|;:,.<>?".contains(c))
-}
