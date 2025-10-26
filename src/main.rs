@@ -6,7 +6,7 @@ use std::{
 use backend::{
     config::AppConfig,
     constants::logo::LOGO,
-    core::{app_state::AppState, cors::cors, logger::logger, shutdown::shutdown_signal},
+    core::{app_state::AppState, logger::logger, shutdown::shutdown_signal},
     custom::{errors::external::ExternalError, result::AppResult},
     database::client::DBClient,
     routers::api_routers,
@@ -28,13 +28,12 @@ async fn main() -> AppResult<()> {
     })?;
     let db_client = DBClient::new(config.clone()).await?;
     let port = config.backend_server.backend_port;
-    let frontend_address = config.frontend_server.frontend_address.clone();
     info!(
         "✅ The backend server is running at http://localhost:{}",
         port
     );
     let app_state = Arc::new(AppState::new(config, db_client));
-    let router = api_routers(app_state.clone()).layer(cors(frontend_address));
+    let router = api_routers(app_state.clone());
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     let listener = TcpListener::bind(&address)
         .await

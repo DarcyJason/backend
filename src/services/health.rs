@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 
 use crate::{
     config::AppConfig,
-    custom::{errors::other::OtherErrorKind, result::AppResult},
+    custom::{errors::other::OtherErrorKind, response::AppResponse, result::AppResult},
     database::client::DBClient,
     repositories::{
         redis::health::HealthRepository,
@@ -37,7 +37,7 @@ impl HealthService {
         } else if checks.0 && !checks.1 {
             Err(OtherErrorKind::Error("SurrealDB server error".to_string()).into())
         } else {
-            Ok("healthy")
+            Ok(AppResponse::success(Some("UP".to_string()), None::<()>))
         }
     }
 }
