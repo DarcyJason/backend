@@ -3,6 +3,7 @@ use std::{
     sync::Arc,
 };
 
+use dotenvy::dotenv;
 use tokio::net::TcpListener;
 use tracing::{error, info};
 
@@ -34,6 +35,7 @@ use crate::{
 };
 
 pub async fn run() -> AppResult<()> {
+    dotenv().ok();
     if let Err(e) = gradient_text(LOGO) {
         error!("❌ Failed to initialize colorful logo: {}", e);
     }
