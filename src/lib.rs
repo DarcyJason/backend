@@ -7,6 +7,16 @@ use dotenvy::dotenv;
 use tokio::net::TcpListener;
 use tracing::{error, info};
 
+use crate::{
+    config::AppConfig,
+    constants::logo::LOGO,
+    core::{app_state::AppState, logger::logger, shutdown::shutdown_signal},
+    custom::{errors::external::ExternalError, result::AppResult},
+    database::client::DBClient,
+    routers::api_routers,
+    utils::color::gradient_text,
+};
+
 pub mod config;
 pub mod constants;
 pub mod core;
@@ -23,16 +33,6 @@ pub mod routers;
 pub mod services;
 pub mod utils;
 pub mod validation;
-
-use crate::{
-    config::AppConfig,
-    constants::logo::LOGO,
-    core::{app_state::AppState, logger::logger, shutdown::shutdown_signal},
-    custom::{errors::external::ExternalError, result::AppResult},
-    database::client::DBClient,
-    routers::api_routers,
-    utils::color::gradient_text,
-};
 
 pub async fn run() -> AppResult<()> {
     dotenv().ok();
