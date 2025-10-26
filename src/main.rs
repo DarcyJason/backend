@@ -19,16 +19,12 @@ use tracing::{error, info};
 #[tokio::main]
 async fn main() -> AppResult<()> {
     dotenv().ok();
-    match gradient_text(LOGO) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("❌ Failed to initialize colorful logo: {}", e);
-        }
+    if let Err(e) = gradient_text(LOGO) {
+        error!("❌ Failed to initialize colorful logo: {}", e);
     }
     let _guard = logger();
-    let config = AppConfig::init().map_err(|e| {
+    let config = AppConfig::init().inspect_err(|e| {
         error!("❌ Failed to initialize config: {}", e);
-        e
     })?;
     let db_client = DBClient::new(config.clone()).await?;
     let port = config.backend_server.backend_port;
