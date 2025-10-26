@@ -2,9 +2,15 @@
 
 ## Content
 
+[Introduction](#introduction)
+
 [Preparation](#preparation)
 
 [API Book](/docs/api_book.md)
+
+## Introduction
+
+This is a Rust backend (Axum) with SurrealDB and Redis. It is a fully functional Auth system. Feel free to use it as a starting point for your own projects.
 
 ## Preparations
 
