@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::{
     custom::{
-        errors::{AppError, device::DeviceErrorKind},
+        errors::{device::DeviceErrorKind, external::ExternalError},
         result::AppResult,
     },
     database::surreal::client::SurrealClient,
@@ -53,11 +53,12 @@ impl DeviceRepository for SurrealClient {
             .bind(("os", os))
             .bind(("device", device))
             .bind(("ip", ip))
-            .await?;
-        let mut device: Vec<Device> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let mut device: Vec<Device> = result.take(0).map_err(ExternalError::from)?;
         match device.pop() {
             Some(device) => Ok(device),
-            None => Err(AppError::DeviceError(DeviceErrorKind::CreateDeviceFailed)),
+            None => Err(DeviceErrorKind::CreateDeviceFailed.into()),
         }
     }
     async fn distrust_device(&self, device_id: &str, user_id: &str) -> AppResult<()> {
@@ -69,11 +70,12 @@ impl DeviceRepository for SurrealClient {
             .query(sql)
             .bind(("device_id", device_id.to_string()))
             .bind(("user_id", user_id.to_string()))
-            .await?;
-        let mut updated_device: Vec<Device> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let mut updated_device: Vec<Device> = result.take(0).map_err(ExternalError::from)?;
         match updated_device.pop() {
             Some(_) => Ok(()),
-            None => Err(AppError::DeviceError(DeviceErrorKind::DeviceNotFound)),
+            None => Err(DeviceErrorKind::DeviceNotFound.into()),
         }
     }
     async fn find_trusted_devices_by_user_id(&self, user_id: &str) -> AppResult<Vec<Device>> {
@@ -84,8 +86,9 @@ impl DeviceRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("user_id", user_id.to_string()))
-            .await?;
-        let trusted_device: Vec<Device> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let trusted_device: Vec<Device> = result.take(0).map_err(ExternalError::from)?;
         Ok(trusted_device)
     }
 
@@ -97,8 +100,9 @@ impl DeviceRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("device_id", device_id.to_string()))
-            .await?;
-        let mut device: Vec<Device> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let mut device: Vec<Device> = result.take(0).map_err(ExternalError::from)?;
         Ok(device.pop())
     }
 }

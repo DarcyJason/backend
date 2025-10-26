@@ -2,7 +2,10 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use uuid::Uuid;
 
-use crate::{custom::result::AppResult, models::token::TokenClaims};
+use crate::{
+    custom::{errors::external::ExternalError, result::AppResult},
+    models::token::TokenClaims,
+};
 
 pub fn generate_access_token(
     user_id: String,
@@ -17,7 +20,8 @@ pub fn generate_access_token(
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(secret),
-    )?)
+    )
+    .map_err(ExternalError::from)?)
 }
 
 pub fn validate_access_token(token: String, secret: &[u8]) -> AppResult<String> {
@@ -25,7 +29,8 @@ pub fn validate_access_token(token: String, secret: &[u8]) -> AppResult<String> 
         &token,
         &DecodingKey::from_secret(secret),
         &Validation::new(Algorithm::HS256),
-    )?;
+    )
+    .map_err(ExternalError::from)?;
     Ok(token_data.claims.user_id)
 }
 

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::{
     custom::{
-        errors::{AppError, user::UserErrorKind},
+        errors::{external::ExternalError, user::UserErrorKind},
         result::AppResult,
     },
     database::surreal::client::SurrealClient,
@@ -44,11 +44,12 @@ impl AuthRepository for SurrealClient {
             .bind(("role", UserRole::User))
             .bind(("salt", salt))
             .bind(("status", UserStatus::Inactive))
-            .await?;
-        let user: Option<User> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         match user {
             Some(_) => Ok(()),
-            None => Err(AppError::UserError(UserErrorKind::CreateUserFailed)),
+            None => Err(UserErrorKind::CreateUserFailed.into()),
         }
     }
     async fn find_user_by_email(&self, email: &str) -> AppResult<Option<User>> {
@@ -59,8 +60,9 @@ impl AuthRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("email", email.to_string()))
-            .await?;
-        let user: Option<User> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         Ok(user)
     }
     async fn find_user_by_id(&self, user_id: &str) -> AppResult<Option<User>> {
@@ -71,8 +73,9 @@ impl AuthRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("user_id", user_id.to_string()))
-            .await?;
-        let user: Option<User> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         Ok(user)
     }
     async fn user_verified(&self, user_id: &str) -> AppResult<()> {
@@ -83,11 +86,12 @@ impl AuthRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("user_id", user_id.to_string()))
-            .await?;
-        let user: Option<User> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         match user {
             Some(_) => Ok(()),
-            None => Err(AppError::UserError(UserErrorKind::UserNotFound)),
+            None => Err(UserErrorKind::UserNotFound.into()),
         }
     }
     async fn reset_password(&self, user_id: &str, new_password: &str) -> AppResult<()> {
@@ -101,11 +105,12 @@ impl AuthRepository for SurrealClient {
             .bind(("password", new_password.to_string()))
             .bind(("salt", new_salt))
             .bind(("user_id", user_id.to_string()))
-            .await?;
-        let user: Option<User> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         match user {
             Some(_) => Ok(()),
-            None => Err(AppError::UserError(UserErrorKind::UserNotFound)),
+            None => Err(UserErrorKind::UserNotFound.into()),
         }
     }
 }

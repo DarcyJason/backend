@@ -10,7 +10,6 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-anyhow = "1.0.99"
 argon2 = "0.5.3"
 async-trait = "0.1.89"
 axum = { version = "0.8.4", features = ["macros"] }

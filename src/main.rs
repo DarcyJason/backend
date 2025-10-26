@@ -7,7 +7,7 @@ use backend::{
     config::AppConfig,
     constants::logo::LOGO,
     core::{app_state::AppState, cors::cors, logger::logger, shutdown::shutdown_signal},
-    custom::result::AppResult,
+    custom::{errors::external::ExternalError, result::AppResult},
     database::client::DBClient,
     routers::api_routers,
     utils::color::gradient_text,
@@ -40,12 +40,15 @@ async fn main() -> AppResult<()> {
     let app_state = Arc::new(AppState::new(config, db_client));
     let router = api_routers(app_state.clone()).layer(cors(frontend_address));
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
-    let listener = TcpListener::bind(&address).await?;
+    let listener = TcpListener::bind(&address)
+        .await
+        .map_err(ExternalError::from)?;
     axum::serve(
         listener,
         router.into_make_service_with_connect_info::<SocketAddr>(),
     )
     .with_graceful_shutdown(shutdown_signal())
-    .await?;
+    .await
+    .map_err(ExternalError::from)?;
     Ok(())
 }

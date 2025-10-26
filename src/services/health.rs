@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use anyhow::anyhow;
 use axum::response::IntoResponse;
 
 use crate::{
     config::AppConfig,
-    custom::{errors::AppError, result::AppResult},
+    custom::{errors::other::OtherErrorKind, result::AppResult},
     database::client::DBClient,
     repositories::{
         redis::health::HealthRepository,
@@ -29,17 +28,14 @@ impl HealthService {
             async { self.db_client.surreal_client.health_check().await.is_ok() }
         );
         if !checks.0 && !checks.1 {
-            Err(AppError::OtherError(Box::new(anyhow!(
-                "Redis server error and SurrealDB server error"
-            ))))
+            Err(
+                OtherErrorKind::Error("Redis server error and SurrealDB server error".to_string())
+                    .into(),
+            )
         } else if !checks.0 && checks.1 {
-            Err(AppError::OtherError(Box::new(anyhow!(
-                "Redis server error"
-            ))))
+            Err(OtherErrorKind::Error("Redis server error".to_string()).into())
         } else if checks.0 && !checks.1 {
-            Err(AppError::OtherError(Box::new(anyhow!(
-                "SurrealDB server error"
-            ))))
+            Err(OtherErrorKind::Error("SurrealDB server error".to_string()).into())
         } else {
             Ok("healthy")
         }

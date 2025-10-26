@@ -4,7 +4,10 @@ use surrealdb::{
     opt::auth::Root,
 };
 
-use crate::{config::surreal_server::SurrealServerConfig, custom::result::AppResult};
+use crate::{
+    config::surreal_server::SurrealServerConfig,
+    custom::{errors::external::ExternalError, result::AppResult},
+};
 
 #[derive(Debug, Clone)]
 pub struct SurrealClient {
@@ -13,15 +16,19 @@ pub struct SurrealClient {
 
 impl SurrealClient {
     pub async fn new(surreal_server_config: SurrealServerConfig) -> AppResult<Self> {
-        let db = Surreal::new::<Ws>(surreal_server_config.surreal_host).await?;
+        let db = Surreal::new::<Ws>(surreal_server_config.surreal_host)
+            .await
+            .map_err(ExternalError::from)?;
         db.signin(Root {
             username: &surreal_server_config.surreal_root_name,
             password: &surreal_server_config.surreal_root_password,
         })
-        .await?;
+        .await
+        .map_err(ExternalError::from)?;
         db.use_ns(surreal_server_config.surreal_namespace)
             .use_db(surreal_server_config.surreal_database)
-            .await?;
+            .await
+            .map_err(ExternalError::from)?;
         Ok(SurrealClient { client: db })
     }
 }

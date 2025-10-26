@@ -1,6 +1,6 @@
 use crate::{
     custom::{
-        errors::{AppError, refresh_token::RefreshTokenErrorKind},
+        errors::{external::ExternalError, refresh_token::RefreshTokenErrorKind},
         result::AppResult,
     },
     database::surreal::client::SurrealClient,
@@ -46,13 +46,12 @@ impl RefreshTokenRepository for SurrealClient {
             .bind(("user_id", user_id.to_string()))
             .bind(("device_id", device_id.to_string()))
             .bind(("token_value", token_value.to_string()))
-            .await?;
-        let mut refresh_token: Vec<RefreshToken> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let mut refresh_token: Vec<RefreshToken> = result.take(0).map_err(ExternalError::from)?;
         match refresh_token.pop() {
             Some(refresh_token) => Ok(refresh_token),
-            None => Err(AppError::RefreshTokenError(
-                RefreshTokenErrorKind::CreateRefreshTokenFailed,
-            )),
+            None => Err(RefreshTokenErrorKind::CreateRefreshTokenFailed.into()),
         }
     }
     async fn find_refresh_token_by_user_and_device(
@@ -68,8 +67,9 @@ impl RefreshTokenRepository for SurrealClient {
             .query(sql)
             .bind(("user_id", user_id.to_string()))
             .bind(("device_id", device_id.to_string()))
-            .await?;
-        let mut refresh_token: Vec<RefreshToken> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let mut refresh_token: Vec<RefreshToken> = result.take(0).map_err(ExternalError::from)?;
         Ok(refresh_token.pop())
     }
     async fn delete_refresh_token(&self, user_id: &str, token_value: &str) -> AppResult<()> {
@@ -81,12 +81,11 @@ impl RefreshTokenRepository for SurrealClient {
             .query(sql)
             .bind(("user_id", user_id.to_string()))
             .bind(("token_value", token_value.to_string()))
-            .await?;
-        let deleted_result: Vec<RefreshToken> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let deleted_result: Vec<RefreshToken> = result.take(0).map_err(ExternalError::from)?;
         if deleted_result.is_empty() {
-            return Err(AppError::RefreshTokenError(
-                RefreshTokenErrorKind::DeleteRefreshTokenFailed,
-            ));
+            return Err(RefreshTokenErrorKind::DeleteRefreshTokenFailed.into());
         }
         Ok(())
     }

@@ -9,6 +9,7 @@ use crate::config::{
     backend_server::BackendServerConfig, frontend_server::FrontendServerConfig,
     mail_server::MailServerConfig,
 };
+use crate::custom::errors::external::ExternalError;
 use crate::custom::result::AppResult;
 
 pub mod backend_server;
@@ -36,6 +37,9 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn init() -> AppResult<Self> {
-        Ok(Figment::new().merge(Env::prefixed("")).extract()?)
+        Ok(Figment::new()
+            .merge(Env::prefixed(""))
+            .extract()
+            .map_err(ExternalError::from)?)
     }
 }

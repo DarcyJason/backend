@@ -1,5 +1,5 @@
-use crate::custom::errors::AppError;
 use crate::custom::errors::email::EmailErrorKind;
+use crate::custom::errors::external::ExternalError;
 use crate::custom::result::AppResult;
 use crate::database::surreal::client::SurrealClient;
 use crate::models::email::{Email, TokenType};
@@ -40,11 +40,12 @@ impl EmailRepository for SurrealClient {
             .bind(("user_id", user_id.to_string()))
             .bind(("token_type", token_type))
             .bind(("email_token", email_token))
-            .await?;
-        let email: Option<Email> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let email: Option<Email> = result.take(0).map_err(ExternalError::from)?;
         match email {
             Some(_) => Ok(()),
-            None => Err(AppError::EmailError(EmailErrorKind::CreateEmailFailed)),
+            None => Err(EmailErrorKind::CreateEmailFailed.into()),
         }
     }
     async fn find_verification_email_by_user_id(&self, user_id: &str) -> AppResult<Option<Email>> {
@@ -55,8 +56,9 @@ impl EmailRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("user_id", user_id.to_string()))
-            .await?;
-        let email: Option<Email> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let email: Option<Email> = result.take(0).map_err(ExternalError::from)?;
         Ok(email)
     }
     async fn find_reset_password_email_by_user_id(
@@ -70,8 +72,9 @@ impl EmailRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("user_id", user_id.to_string()))
-            .await?;
-        let email: Option<Email> = result.take(0)?;
+            .await
+            .map_err(ExternalError::from)?;
+        let email: Option<Email> = result.take(0).map_err(ExternalError::from)?;
         Ok(email)
     }
 }

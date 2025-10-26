@@ -10,7 +10,7 @@ use axum::{
 use crate::{
     core::app_state::AppState,
     custom::{
-        errors::{AppError, access_token::AccessTokenErrorKind, user::UserErrorKind},
+        errors::{access_token::AccessTokenErrorKind, user::UserErrorKind},
         result::AppResult,
     },
     models::user::{User, UserRole},
@@ -31,9 +31,7 @@ pub async fn auth(
     {
         Some(token) => token,
         None => {
-            return Err(AppError::AccessTokenError(
-                AccessTokenErrorKind::AccessTokenNotFound,
-            ));
+            return Err(AccessTokenErrorKind::AccessTokenNotFound.into());
         }
     };
     let user_id = match validate_access_token(
@@ -42,9 +40,7 @@ pub async fn auth(
     ) {
         Ok(user_id) => user_id,
         Err(_) => {
-            return Err(AppError::AccessTokenError(
-                AccessTokenErrorKind::InvalidAccessToken,
-            ));
+            return Err(AccessTokenErrorKind::InvalidAccessToken.into());
         }
     };
     match app_state
@@ -57,7 +53,7 @@ pub async fn auth(
             req.extensions_mut().insert(user);
             Ok(next.run(req).await)
         }
-        None => Err(AppError::UserError(UserErrorKind::UserNotFound)),
+        None => Err(UserErrorKind::UserNotFound.into()),
     }
 }
 
@@ -69,9 +65,9 @@ pub async fn role_check(
     let user = req
         .extensions()
         .get::<User>()
-        .ok_or_else(|| AppError::UserError(UserErrorKind::UserNotFound))?;
+        .ok_or_else(|| UserErrorKind::UserNotFound)?;
     if !required_roles.contains(&user.role) {
-        return Err(AppError::UserError(UserErrorKind::Unauthorized));
+        return Err(UserErrorKind::Unauthorized.into());
     }
     Ok(next.run(req).await)
 }

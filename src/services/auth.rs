@@ -14,7 +14,7 @@ use tracing::{error, info};
 use crate::{
     config::AppConfig,
     custom::{
-        errors::{AppError, email::EmailErrorKind, user::UserErrorKind},
+        errors::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
         response::AppResponse,
         result::AppResult,
     },
@@ -66,7 +66,7 @@ impl AuthService {
                 "❌ Failed: user already exists with email {}",
                 payload.email
             );
-            return Err(AppError::UserError(UserErrorKind::UserAlreadyExists));
+            return Err(UserErrorKind::UserAlreadyExists.into());
         }
         match self
             .db_client
@@ -77,7 +77,7 @@ impl AuthService {
             Ok(_) => info!("Create user successfully"),
             Err(_) => {
                 error!("Create user failed");
-                return Err(AppError::UserError(UserErrorKind::CreateUserFailed));
+                return Err(UserErrorKind::CreateUserFailed.into());
             }
         }
         info!("✅ Start creating trusted device");
@@ -104,10 +104,10 @@ impl AuthService {
             .await?
         {
             Some(user) => user,
-            None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+            None => return Err(UserErrorKind::UserNotFound.into()),
         };
         if !compare_hashed_password(&payload.password, &user.password)? {
-            return Err(AppError::UserError(UserErrorKind::WrongPassword));
+            return Err(UserErrorKind::WrongPassword.into());
         }
         if !user.is_verified {
             info!("✅ Start letting new user to verify account");
@@ -130,7 +130,8 @@ impl AuthService {
                 &html,
                 &self.config.mail_server.resend_api_key,
             )
-            .await?;
+            .await
+            .map_err(ExternalError::from)?;
             let response_headers = HeaderMap::new();
             return Ok((
                 response_headers,
@@ -141,7 +142,7 @@ impl AuthService {
         info!("✅ Start getting user device");
         let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
             Some(user_agent) => user_agent,
-            None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
+            None => return Err(UserErrorKind::MissingUserAgent.into()),
         };
         let (user_agent, os, device) = parse_user_agent_detailed(user_agent_str);
         let trusted_devices = self
@@ -175,7 +176,8 @@ impl AuthService {
                     &html,
                     &self.config.mail_server.resend_api_key,
                 )
-                .await?;
+                .await
+                .map_err(ExternalError::from)?;
                 let response_headers = HeaderMap::new();
                 return Ok((
                     response_headers,
@@ -276,7 +278,7 @@ impl AuthService {
             .await?
         {
             Some(user) => user,
-            None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+            None => return Err(UserErrorKind::UserNotFound.into()),
         };
         let email = match self
             .db_client
@@ -285,7 +287,7 @@ impl AuthService {
             .await?
         {
             Some(email) => email,
-            None => return Err(AppError::EmailError(EmailErrorKind::EmailNotFound)),
+            None => return Err(EmailErrorKind::EmailNotFound.into()),
         };
         if email.email_token == payload.token {
             self.db_client
@@ -295,7 +297,7 @@ impl AuthService {
         }
         let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
             Some(user_agent) => user_agent,
-            None => return Err(AppError::UserError(UserErrorKind::MissingUserAgent)),
+            None => return Err(UserErrorKind::MissingUserAgent.into()),
         };
         let (user_agent, os, device) = parse_user_agent_detailed(user_agent_str);
         let new_device = self
@@ -326,7 +328,7 @@ impl AuthService {
             .await?
         {
             Some(user) => user,
-            None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+            None => return Err(UserErrorKind::UserNotFound.into()),
         };
         let email_token = generate_email_token();
         self.db_client
@@ -347,7 +349,8 @@ impl AuthService {
             &html,
             &self.config.mail_server.resend_api_key,
         )
-        .await?;
+        .await
+        .map_err(ExternalError::from)?;
         Ok(AppResponse::success(
             Some("An reset password email has been sent, please check your email".to_string()),
             None::<()>,
@@ -365,7 +368,7 @@ impl AuthService {
             .await?
         {
             Some(user) => user,
-            None => return Err(AppError::UserError(UserErrorKind::UserNotFound)),
+            None => return Err(UserErrorKind::UserNotFound.into()),
         };
         let email = match self
             .db_client
@@ -374,7 +377,7 @@ impl AuthService {
             .await?
         {
             Some(email) => email,
-            None => return Err(AppError::EmailError(EmailErrorKind::EmailNotFound)),
+            None => return Err(EmailErrorKind::EmailNotFound.into()),
         };
         if email.email_token == payload.token {
             self.db_client

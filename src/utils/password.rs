@@ -5,7 +5,6 @@ use argon2::PasswordVerifier;
 use argon2::password_hash::SaltString;
 use argon2::password_hash::rand_core::OsRng;
 
-use crate::custom::errors::AppError;
 use crate::custom::errors::validation::ValidationErrorKind;
 use crate::custom::result::AppResult;
 
@@ -20,7 +19,7 @@ pub fn hash_password(password: String) -> AppResult<(String, String)> {
 
 pub fn compare_hashed_password(password: &str, hashed_password: &str) -> AppResult<bool> {
     let parsed_hash = PasswordHash::new(hashed_password)
-        .map_err(|err| AppError::ValidationError(ValidationErrorKind::PasswordHashingError(err)))?;
+        .map_err(|err| ValidationErrorKind::PasswordHashingError(err))?;
     let is_password_match = Argon2::default()
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok_and(|_| true);
