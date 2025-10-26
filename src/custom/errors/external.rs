@@ -7,6 +7,8 @@ pub enum ExternalError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
     #[error(transparent)]
+    ParseColor(#[from] colorgrad::GradientBuilderError),
+    #[error(transparent)]
     Redis(#[from] redis::RedisError),
     #[error(transparent)]
     SurrealDB(#[from] surrealdb::Error),
