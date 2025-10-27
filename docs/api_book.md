@@ -1,29 +1,8 @@
 # API Book
 
 ## Content
-[Preparation](#preparation)
 
 [API](#api)
-
-[Test API](#test-api)
-
-## Preparation
-
-### Install hurl command
-
-```sh
-cargo install --locked hurl
-```
-
-### Configure the parameters in hurl file or use the default values
-
-## Change directory to hurl directory
-
-Please make sure you are in hurl directory or use the following command in the root of the project:
-
-```sh
-cd hurl
-```
 
 ## API
 
@@ -98,22 +77,3 @@ Cookie: refresh_token=<your refresh token>
 User-Agent: <your user agent>
 ```
 
-## Test API
-
-### Register user
-
-```sh
-hurl register_user.hurl
-```
-
-### Verify user
-
-```sh
-hurl verify_user.hurl --variable token=<The token in the email>
-```
-
-### Login user and check user function
-
-```sh
-hurl login_and_check_user.hurl
-```
