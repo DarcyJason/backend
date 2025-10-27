@@ -9,6 +9,8 @@ pub enum EmailErrorKind {
     CreateEmailFailed,
     #[error("Email not found")]
     EmailNotFound,
+    #[error("Invalid token")]
+    InvalidToken,
 }
 
 impl ErrorKind for EmailErrorKind {
@@ -16,6 +18,7 @@ impl ErrorKind for EmailErrorKind {
         match self {
             EmailErrorKind::CreateEmailFailed => StatusCode::INTERNAL_SERVER_ERROR,
             EmailErrorKind::EmailNotFound => StatusCode::NOT_FOUND,
+            EmailErrorKind::InvalidToken => StatusCode::UNAUTHORIZED,
         }
     }
     fn message(&self) -> String {

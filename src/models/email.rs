@@ -5,7 +5,7 @@ use surrealdb::sql::Thing;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Email {
     pub id: Thing,
-    pub user_id: String,
+    pub user_id: Thing,
     pub token_type: TokenType,
     pub email_token: String,
     pub created_at: DateTime<Utc>,

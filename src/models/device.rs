@@ -5,7 +5,7 @@ use surrealdb::sql::Thing;
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Device {
     pub id: Thing,
-    pub user_id: String,
+    pub user_id: Thing,
     pub ip: String,
     pub user_agent: String,
     pub os: String,

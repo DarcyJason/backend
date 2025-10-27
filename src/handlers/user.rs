@@ -13,7 +13,7 @@ pub async fn get_me(
 
 pub async fn update_user_profile() {}
 
-pub async fn delete_user() {}
+pub async fn delete() {}
 
 pub async fn change_password() {}
 

@@ -27,6 +27,12 @@ cd hurl
 
 ## API
 
+### Health check API
+
+```
+GET http://localhost:7878/api/v1/health
+```
+
 ### Register user API
 
 ```

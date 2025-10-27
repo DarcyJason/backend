@@ -2,7 +2,7 @@ DEFINE TABLE OVERWRITE devices SCHEMALESS;
 
 # DEFINE FIELD OVERWRITE field ON devices;
 DEFINE FIELD OVERWRITE id ON devices TYPE uuid DEFAULT rand::uuid::v4();
-DEFINE FIELD OVERWRITE user_id ON devices TYPE string;
+DEFINE FIELD OVERWRITE user_id ON devices TYPE record<users>;
 DEFINE FIELD OVERWRITE ip ON devices TYPE string;
 DEFINE FIELD OVERWRITE user_agent ON devices TYPE string;
 DEFINE FIELD OVERWRITE os ON devices TYPE string;

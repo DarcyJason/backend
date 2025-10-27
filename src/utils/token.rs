@@ -1,5 +1,6 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use surrealdb::sql::Thing;
 use uuid::Uuid;
 
 use crate::{
@@ -8,7 +9,7 @@ use crate::{
 };
 
 pub fn generate_access_token(
-    user_id: String,
+    user_id: Thing,
     secret: &[u8],
     expires_in_seconds: i64,
 ) -> AppResult<String> {
@@ -24,7 +25,7 @@ pub fn generate_access_token(
     .map_err(ExternalError::from)?)
 }
 
-pub fn validate_access_token(token: String, secret: &[u8]) -> AppResult<String> {
+pub fn validate_access_token(token: String, secret: &[u8]) -> AppResult<Thing> {
     let token_data = decode::<TokenClaims>(
         &token,
         &DecodingKey::from_secret(secret),

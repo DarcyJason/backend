@@ -115,7 +115,7 @@ impl AuthService {
             self.db_client
                 .surreal_client
                 .create_email(
-                    &user.id.to_string(),
+                    user.id.clone(),
                     TokenType::Verification,
                     email_token.clone(),
                 )
@@ -148,7 +148,7 @@ impl AuthService {
         let trusted_devices = self
             .db_client
             .surreal_client
-            .find_trusted_devices_by_user_id(&user.id.to_string())
+            .find_trusted_devices_by_user_id(user.id.clone())
             .await?;
         let found_device = trusted_devices
             .into_iter()
@@ -161,7 +161,7 @@ impl AuthService {
                 self.db_client
                     .surreal_client
                     .create_email(
-                        &user.id.to_string(),
+                        user.id.clone(),
                         TokenType::Verification,
                         email_token.clone(),
                     )
@@ -188,7 +188,7 @@ impl AuthService {
         };
         info!("✅ Start creating access_token");
         let access_token = generate_access_token(
-            user.id.to_string(),
+            user.id.clone(),
             self.config.jwt_config.jwt_secret.as_bytes(),
             self.config.jwt_config.jwt_expires_in_seconds,
         )?;
@@ -201,7 +201,7 @@ impl AuthService {
         let refresh_token_value = match self
             .db_client
             .surreal_client
-            .find_refresh_token_by_user_and_device(&user.id.to_string(), &device.id.to_string())
+            .find_refresh_token_by_user_and_device(user.id.clone(), device.id.clone())
             .await?
         {
             Some(token) => token.token_value,
@@ -209,11 +209,7 @@ impl AuthService {
                 let new_token_value = generate_refresh_token();
                 self.db_client
                     .surreal_client
-                    .create_refresh_token(
-                        &user.id.to_string(),
-                        &device.id.to_string(),
-                        &new_token_value,
-                    )
+                    .create_refresh_token(user.id.clone(), device.id.clone(), &new_token_value)
                     .await?;
                 new_token_value
             }
@@ -240,7 +236,7 @@ impl AuthService {
             match self
                 .db_client
                 .surreal_client
-                .delete_refresh_token(&user.id.to_string(), &refresh_token)
+                .delete_refresh_token(user.id.clone(), &refresh_token)
                 .await
             {
                 Ok(_) => info!("✅ Successfully deleted refresh token from database."),
@@ -250,14 +246,14 @@ impl AuthService {
                 ),
             }
         }
-        let refresh_token_cookie = Cookie::build(("refresh_token", ""))
+        let new_refresh_token_cookie = Cookie::build(("refresh_token", ""))
             .path("/")
             .http_only(true)
             .secure(true)
             .same_site(SameSite::Strict)
             .max_age(Duration::ZERO)
             .build();
-        let updated_jar = jar.remove("refresh_token").add(refresh_token_cookie);
+        let updated_jar = jar.remove("refresh_token").add(new_refresh_token_cookie);
         info!("✅ Logout success for user_id: {}", user.id);
         Ok((
             updated_jar,
@@ -277,24 +273,32 @@ impl AuthService {
             .find_user_by_email(&payload.email)
             .await?
         {
-            Some(user) => user,
+            Some(user) => {
+                info!("✅ user already found");
+                user
+            }
             None => return Err(UserErrorKind::UserNotFound.into()),
         };
         let email = match self
             .db_client
             .surreal_client
-            .find_verification_email_by_user_id(&user.id.to_string())
+            .find_verification_email_by_user_id(user.id.clone())
             .await?
         {
-            Some(email) => email,
+            Some(email) => {
+                info!("✅ email already found");
+                email
+            }
             None => return Err(EmailErrorKind::EmailNotFound.into()),
         };
-        if email.email_token == payload.token {
-            self.db_client
-                .surreal_client
-                .user_verified(&user.id.to_string())
-                .await?;
+        if email.email_token != payload.email_token {
+            return Err(EmailErrorKind::InvalidToken.into());
         }
+        self.db_client
+            .surreal_client
+            .user_verified(user.id.clone())
+            .await?;
+        info!("email_token matched");
         let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
             Some(user_agent) => user_agent,
             None => return Err(UserErrorKind::MissingUserAgent.into()),
@@ -304,7 +308,7 @@ impl AuthService {
             .db_client
             .surreal_client
             .create_device(
-                &user.id.to_string(),
+                user.id.clone(),
                 user_agent,
                 os,
                 device,
@@ -334,7 +338,7 @@ impl AuthService {
         self.db_client
             .surreal_client
             .create_email(
-                &user.id.to_string(),
+                user.id.clone(),
                 TokenType::PasswordReset,
                 email_token.clone(),
             )
@@ -373,7 +377,7 @@ impl AuthService {
         let email = match self
             .db_client
             .surreal_client
-            .find_reset_password_email_by_user_id(&user.id.to_string())
+            .find_reset_password_email_by_user_id(user.id.clone())
             .await?
         {
             Some(email) => email,
@@ -382,7 +386,7 @@ impl AuthService {
         if email.email_token == payload.token {
             self.db_client
                 .surreal_client
-                .reset_password(&user.id.to_string(), &payload.new_password)
+                .reset_password(user.id.clone(), &payload.new_password)
                 .await?;
         }
         Ok(AppResponse::success(

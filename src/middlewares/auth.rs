@@ -46,7 +46,7 @@ pub async fn auth(
     match app_state
         .db_client
         .surreal_client
-        .find_user_by_id(&user_id)
+        .find_user_by_id(user_id)
         .await?
     {
         Some(user) => {

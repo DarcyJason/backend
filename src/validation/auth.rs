@@ -135,7 +135,7 @@ pub fn validate_login_payload(payload: &LoginRequest) -> AppResult<()> {
 }
 
 pub fn validate_verify_user_payload(payload: &VerifyUserRequest) -> AppResult<()> {
-    if payload.token.is_empty() {
+    if payload.email_token.is_empty() {
         return Err(
             ValidationErrorKind::ValidationFailed("Token can't be empty".to_string()).into(),
         );

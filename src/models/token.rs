@@ -4,7 +4,7 @@ use surrealdb::sql::Thing;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenClaims {
-    pub user_id: String,
+    pub user_id: Thing,
     pub iat: usize,
     pub exp: usize,
 }

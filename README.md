@@ -4,7 +4,7 @@
 
 [Introduction](#introduction)
 
-[Preparation](#preparation)
+[Preparations](#preparations)
 
 [API Book](/docs/api_book.md)
 

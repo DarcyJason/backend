@@ -17,7 +17,7 @@ pub struct LoginRequest {
 #[derive(Debug, Deserialize)]
 pub struct VerifyUserRequest {
     pub email: String,
-    pub token: String,
+    pub email_token: String,
 }
 
 #[derive(Debug, Deserialize)]

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use surrealdb::sql::Thing;
 
 use crate::{
     custom::{
@@ -14,9 +15,9 @@ use crate::{
 pub trait AuthRepository {
     async fn create_user(&self, name: &str, email: &str, password: &str) -> AppResult<()>;
     async fn find_user_by_email(&self, email: &str) -> AppResult<Option<User>>;
-    async fn find_user_by_id(&self, user_id: &str) -> AppResult<Option<User>>;
-    async fn user_verified(&self, user_id: &str) -> AppResult<()>;
-    async fn reset_password(&self, user_id: &str, new_password: &str) -> AppResult<()>;
+    async fn find_user_by_id(&self, user_id: Thing) -> AppResult<Option<User>>;
+    async fn user_verified(&self, user_id: Thing) -> AppResult<()>;
+    async fn reset_password(&self, user_id: Thing, new_password: &str) -> AppResult<()>;
 }
 
 #[async_trait]
@@ -65,27 +66,27 @@ impl AuthRepository for SurrealClient {
         let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         Ok(user)
     }
-    async fn find_user_by_id(&self, user_id: &str) -> AppResult<Option<User>> {
+    async fn find_user_by_id(&self, user_id: Thing) -> AppResult<Option<User>> {
         let sql = r#"
-            SELECT * FROM users WHERE id = <record> $user_id LIMIT 1
+            SELECT * FROM users WHERE id = $user_id LIMIT 1
         "#;
         let mut result = self
             .client
             .query(sql)
-            .bind(("user_id", user_id.to_string()))
+            .bind(("user_id", user_id))
             .await
             .map_err(ExternalError::from)?;
         let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         Ok(user)
     }
-    async fn user_verified(&self, user_id: &str) -> AppResult<()> {
+    async fn user_verified(&self, user_id: Thing) -> AppResult<()> {
         let sql = r#"
-            UPDATE users SET is_verified = true WHERE id = <record> $user_id
+            UPDATE users SET is_verified = true WHERE id = $user_id
         "#;
         let mut result = self
             .client
             .query(sql)
-            .bind(("user_id", user_id.to_string()))
+            .bind(("user_id", user_id))
             .await
             .map_err(ExternalError::from)?;
         let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
@@ -94,17 +95,17 @@ impl AuthRepository for SurrealClient {
             None => Err(UserErrorKind::UserNotFound.into()),
         }
     }
-    async fn reset_password(&self, user_id: &str, new_password: &str) -> AppResult<()> {
+    async fn reset_password(&self, user_id: Thing, new_password: &str) -> AppResult<()> {
         let (new_password, new_salt) = hash_password(new_password.to_string())?;
         let sql = r#"
-            UPDATE users SET password = $password, salt = $salt WHERE id = <record> $user_id
+            UPDATE users SET password = $password, salt = $salt WHERE id = $user_id
         "#;
         let mut result = self
             .client
             .query(sql)
             .bind(("password", new_password.to_string()))
             .bind(("salt", new_salt))
-            .bind(("user_id", user_id.to_string()))
+            .bind(("user_id", user_id))
             .await
             .map_err(ExternalError::from)?;
         let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
