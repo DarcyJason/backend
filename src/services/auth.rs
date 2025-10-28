@@ -27,7 +27,7 @@ use crate::{
         responses::login::LoginResponseData,
     },
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
-    models::{email::TokenType, user::User},
+    models::{email::EmailType, user::User},
     repositories::surreal::{
         auth::AuthRepository, device::DeviceRepository, email::EmailRepository,
         refresh_token::RefreshTokenRepository,
@@ -116,7 +116,7 @@ impl AuthService {
                 .surreal_client
                 .create_email(
                     user.id.clone(),
-                    TokenType::Verification,
+                    EmailType::Verification,
                     email_token.clone(),
                 )
                 .await?;
@@ -162,7 +162,7 @@ impl AuthService {
                     .surreal_client
                     .create_email(
                         user.id.clone(),
-                        TokenType::Verification,
+                        EmailType::Verification,
                         email_token.clone(),
                     )
                     .await?;
@@ -186,17 +186,6 @@ impl AuthService {
                 ));
             }
         };
-        info!("✅ Start creating access_token");
-        let access_token = generate_access_token(
-            user.id.clone(),
-            self.config.jwt_config.jwt_secret.as_bytes(),
-            self.config.jwt_config.jwt_expires_in_seconds,
-        )?;
-        let mut response_headers = HeaderMap::new();
-        response_headers.insert(
-            AUTHORIZATION,
-            format!("Bearer {}", access_token).parse().unwrap(),
-        );
         info!("✅ Start creating refresh token");
         let refresh_token_value = match self
             .db_client
@@ -221,6 +210,17 @@ impl AuthService {
             .max_age(Duration::days(7))
             .build();
         let jar = jar.add(refresh_token_cookie);
+        info!("✅ Start creating access_token");
+        let access_token = generate_access_token(
+            user.id.clone(),
+            self.config.jwt_config.jwt_secret.as_bytes(),
+            self.config.jwt_config.jwt_expires_in_seconds,
+        )?;
+        let mut response_headers = HeaderMap::new();
+        response_headers.insert(
+            AUTHORIZATION,
+            format!("Bearer {}", access_token).parse().unwrap(),
+        );
         Ok((
             response_headers,
             jar,
@@ -282,7 +282,7 @@ impl AuthService {
         let email = match self
             .db_client
             .surreal_client
-            .find_verification_email_by_user_id(user.id.clone())
+            .find_email_by_user_id_and_email_type(user.id.clone(), EmailType::Verification)
             .await?
         {
             Some(email) => {
@@ -339,7 +339,7 @@ impl AuthService {
             .surreal_client
             .create_email(
                 user.id.clone(),
-                TokenType::PasswordReset,
+                EmailType::PasswordReset,
                 email_token.clone(),
             )
             .await?;
@@ -377,7 +377,7 @@ impl AuthService {
         let email = match self
             .db_client
             .surreal_client
-            .find_reset_password_email_by_user_id(user.id.clone())
+            .find_email_by_user_id_and_email_type(user.id.clone(), EmailType::PasswordReset)
             .await?
         {
             Some(email) => email,

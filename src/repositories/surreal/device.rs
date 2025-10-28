@@ -64,7 +64,10 @@ impl DeviceRepository for SurrealClient {
     }
     async fn distrust_device(&self, device_id: Thing, user_id: Thing) -> AppResult<()> {
         let sql = r#"
-            UPDATE devices SET is_trusted = false WHERE id = $device_id AND user_id = $user_id
+            UPDATE devices SET is_trusted = false
+            WHERE
+                id = $device_id AND
+                user_id = $user_id
         "#;
         let mut result = self
             .client
@@ -81,7 +84,10 @@ impl DeviceRepository for SurrealClient {
     }
     async fn find_trusted_devices_by_user_id(&self, user_id: Thing) -> AppResult<Vec<Device>> {
         let sql = r#"
-            SELECT * FROM devices WHERE user_id = $user_id AND is_trusted = true
+            SELECT * FROM devices
+            WHERE
+                user_id = $user_id AND
+                is_trusted = true
         "#;
         let mut result = self
             .client
@@ -95,7 +101,9 @@ impl DeviceRepository for SurrealClient {
 
     async fn find_device_by_id(&self, device_id: Thing) -> AppResult<Option<Device>> {
         let sql = r#"
-            SELECT * FROM devices WHERE id = $device_id
+            SELECT * FROM devices
+            WHERE
+                id = $device_id
         "#;
         let mut result = self
             .client

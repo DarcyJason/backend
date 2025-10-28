@@ -26,18 +26,6 @@ POST http://localhost:7878/api/v1/auth/register
 
 ### Login user API
 
-if user is a new user, use this api
-
-```
-POST http://localhost:7878/api/v1/auth/login
-{
-    "email": "<your email>",
-    "password": "<your password>"
-}
-```
-
-if user is verified, use this api, this will return access_token in `Authorization` header and refresh_token in Cookie.
-
 ```
 POST http://localhost:7878/api/v1/auth/login
 User-Agent: <your user agent>
@@ -76,4 +64,3 @@ Authorization: Bearer <your access token>
 Cookie: refresh_token=<your refresh token>
 User-Agent: <your user agent>
 ```
-

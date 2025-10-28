@@ -2,7 +2,7 @@ use crate::custom::errors::email::EmailErrorKind;
 use crate::custom::errors::external::ExternalError;
 use crate::custom::result::AppResult;
 use crate::database::surreal::client::SurrealClient;
-use crate::models::email::{Email, TokenType};
+use crate::models::email::{Email, EmailType};
 use async_trait::async_trait;
 use surrealdb::sql::Thing;
 
@@ -11,13 +11,13 @@ pub trait EmailRepository {
     async fn create_email(
         &self,
         user_id: Thing,
-        token_type: TokenType,
+        email_type: EmailType,
         email_token: String,
     ) -> AppResult<()>;
-    async fn find_verification_email_by_user_id(&self, user_id: Thing) -> AppResult<Option<Email>>;
-    async fn find_reset_password_email_by_user_id(
+    async fn find_email_by_user_id_and_email_type(
         &self,
         user_id: Thing,
+        email_type: EmailType,
     ) -> AppResult<Option<Email>>;
 }
 
@@ -26,14 +26,14 @@ impl EmailRepository for SurrealClient {
     async fn create_email(
         &self,
         user_id: Thing,
-        token_type: TokenType,
+        email_type: EmailType,
         email_token: String,
     ) -> AppResult<()> {
         let sql = r#"
-            CREATE email CONTENT {
+            CREATE emails CONTENT {
                 id: rand::uuid::v4(),
                 user_id: $user_id,
-                token_type: $token_type,
+                email_type: $email_type,
                 email_token: $email_token,
             }
         "#;
@@ -41,7 +41,7 @@ impl EmailRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("user_id", user_id))
-            .bind(("token_type", token_type))
+            .bind(("email_type", email_type))
             .bind(("email_token", email_token))
             .await
             .map_err(ExternalError::from)?;
@@ -51,30 +51,26 @@ impl EmailRepository for SurrealClient {
             None => Err(EmailErrorKind::CreateEmailFailed.into()),
         }
     }
-    async fn find_verification_email_by_user_id(&self, user_id: Thing) -> AppResult<Option<Email>> {
-        let sql = r#"
-            SELECT * FROM email WHERE user_id = $user_id AND token_type = 'Verification' ORDER BY created_at DESC LIMIT 1
-        "#;
-        let mut result = self
-            .client
-            .query(sql)
-            .bind(("user_id", user_id))
-            .await
-            .map_err(ExternalError::from)?;
-        let email: Option<Email> = result.take(0).map_err(ExternalError::from)?;
-        Ok(email)
-    }
-    async fn find_reset_password_email_by_user_id(
+    async fn find_email_by_user_id_and_email_type(
         &self,
         user_id: Thing,
+        email_type: EmailType,
     ) -> AppResult<Option<Email>> {
         let sql = r#"
-            SELECT * FROM email WHERE user_id = $user_id AND token_type = 'PasswordReset'
+            SELECT * FROM emails
+            WHERE
+                user_id = $user_id AND
+                email_type = $email_type AND
+                is_used = false AND
+                expires_at > time::now()
+                ORDER BY created_at DESC
+                LIMIT 1
         "#;
         let mut result = self
             .client
             .query(sql)
             .bind(("user_id", user_id))
+            .bind(("email_type", email_type))
             .await
             .map_err(ExternalError::from)?;
         let email: Option<Email> = result.take(0).map_err(ExternalError::from)?;

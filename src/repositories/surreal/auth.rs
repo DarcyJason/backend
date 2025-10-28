@@ -55,7 +55,10 @@ impl AuthRepository for SurrealClient {
     }
     async fn find_user_by_email(&self, email: &str) -> AppResult<Option<User>> {
         let sql = r#"
-            SELECT * FROM users WHERE email = $email LIMIT 1
+            SELECT * FROM users
+            WHERE
+                email = $email
+                LIMIT 1
         "#;
         let mut result = self
             .client
@@ -68,7 +71,10 @@ impl AuthRepository for SurrealClient {
     }
     async fn find_user_by_id(&self, user_id: Thing) -> AppResult<Option<User>> {
         let sql = r#"
-            SELECT * FROM users WHERE id = $user_id LIMIT 1
+            SELECT * FROM users
+            WHERE
+                id = $user_id
+                LIMIT 1
         "#;
         let mut result = self
             .client
@@ -81,7 +87,19 @@ impl AuthRepository for SurrealClient {
     }
     async fn user_verified(&self, user_id: Thing) -> AppResult<()> {
         let sql = r#"
-            UPDATE users SET is_verified = true WHERE id = $user_id
+            BEGIN TRANSACTION;
+                UPDATE users SET is_verified = true
+                WHERE
+                    id = $user_id RETURN AFTER;
+
+                UPDATE emails SET is_used = true
+                WHERE
+                    user_id = $user_id AND
+                    token_type = 'Verification' AND
+                    is_used = false
+                    ORDER BY created_at DESC
+                    LIMIT 1;
+            COMMIT TRANSACTION;
         "#;
         let mut result = self
             .client
@@ -98,7 +116,10 @@ impl AuthRepository for SurrealClient {
     async fn reset_password(&self, user_id: Thing, new_password: &str) -> AppResult<()> {
         let (new_password, new_salt) = hash_password(new_password.to_string())?;
         let sql = r#"
-            UPDATE users SET password = $password, salt = $salt WHERE id = $user_id
+            UPDATE users SET password = $password,
+            salt = $salt
+            WHERE
+                id = $user_id
         "#;
         let mut result = self
             .client

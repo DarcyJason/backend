@@ -6,15 +6,16 @@ use surrealdb::sql::Thing;
 pub struct Email {
     pub id: Thing,
     pub user_id: Thing,
-    pub token_type: TokenType,
+    pub email_type: EmailType,
     pub email_token: String,
     pub created_at: DateTime<Utc>,
     pub expires_at: DateTime<Utc>,
+    pub is_used: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub enum TokenType {
+pub enum EmailType {
     Verification,
     PasswordReset,
 }
