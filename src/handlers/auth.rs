@@ -6,7 +6,7 @@ use axum::{
 };
 use axum_extra::extract::cookie::CookieJar;
 use std::{net::SocketAddr, sync::Arc};
-use tracing::{info, instrument};
+use tracing::instrument;
 
 use crate::dtos::requests::auth::LoginRequest;
 use crate::{
@@ -25,7 +25,6 @@ pub async fn register(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<RegisterRequest>,
 ) -> AppResult<impl IntoResponse> {
-    info!("✅ Start handling user registration");
     app_state.auth_service.register(payload).await
 }
 
@@ -38,7 +37,6 @@ pub async fn login(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
-    info!("✅ Start handling user login");
     app_state.auth_service.login(headers, jar, payload).await
 }
 
@@ -48,7 +46,6 @@ pub async fn logout(
     jar: CookieJar,
     Extension(user): Extension<User>,
 ) -> AppResult<impl IntoResponse> {
-    info!("✅ Start handling user logout for user_id: {}", user.id);
     app_state.auth_service.logout(jar, user).await
 }
 

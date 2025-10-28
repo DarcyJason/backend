@@ -27,7 +27,10 @@ use crate::{
         responses::login::LoginResponseData,
     },
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
-    models::{email::EmailType, user::User},
+    models::{
+        email::EmailType,
+        user::{User, UserStatus},
+    },
     repositories::surreal::{
         auth::AuthRepository, device::DeviceRepository, email::EmailRepository,
         refresh_token::RefreshTokenRepository,
@@ -110,7 +113,6 @@ impl AuthService {
             return Err(UserErrorKind::WrongPassword.into());
         }
         if !user.is_verified {
-            info!("✅ Start letting new user to verify account");
             let email_token = generate_email_token();
             self.db_client
                 .surreal_client
@@ -139,7 +141,6 @@ impl AuthService {
                 AppResponse::success(Some("Check your email".to_string()), None),
             ));
         }
-        info!("✅ Start getting user device");
         let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
             Some(user_agent) => user_agent,
             None => return Err(UserErrorKind::MissingUserAgent.into()),
@@ -156,7 +157,6 @@ impl AuthService {
         let device = match found_device {
             Some(device) => device,
             None => {
-                info!("✅ Start letting user login from a new device to verify account");
                 let email_token = generate_email_token();
                 self.db_client
                     .surreal_client
@@ -186,7 +186,6 @@ impl AuthService {
                 ));
             }
         };
-        info!("✅ Start creating refresh token");
         let refresh_token_value = match self
             .db_client
             .surreal_client
@@ -210,7 +209,6 @@ impl AuthService {
             .max_age(Duration::days(7))
             .build();
         let jar = jar.add(refresh_token_cookie);
-        info!("✅ Start creating access_token");
         let access_token = generate_access_token(
             user.id.clone(),
             self.config.jwt_config.jwt_secret.as_bytes(),
@@ -221,7 +219,6 @@ impl AuthService {
             AUTHORIZATION,
             format!("Bearer {}", access_token).parse().unwrap(),
         );
-        info!("✅ Finish Handling login");
         Ok((
             response_headers,
             jar,
@@ -255,7 +252,6 @@ impl AuthService {
             .max_age(Duration::ZERO)
             .build();
         let updated_jar = jar.remove("refresh_token").add(new_refresh_token_cookie);
-        info!("✅ Logout success for user_id: {}", user.id);
         Ok((
             updated_jar,
             AppResponse::success(Some("Logout Success".to_string()), None::<()>),
@@ -275,7 +271,6 @@ impl AuthService {
             .await?
         {
             Some(user) => {
-                info!("✅ user already found");
                 user
             }
             None => return Err(UserErrorKind::UserNotFound.into()),
@@ -287,7 +282,6 @@ impl AuthService {
             .await?
         {
             Some(email) => {
-                info!("✅ email already found");
                 email
             }
             None => return Err(EmailErrorKind::EmailNotFound.into()),
@@ -297,9 +291,8 @@ impl AuthService {
         }
         self.db_client
             .surreal_client
-            .user_verified(user.id.clone())
+            .user_verified(user.id.clone(), UserStatus::Active)
             .await?;
-        info!("email_token matched");
         let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
             Some(user_agent) => user_agent,
             None => return Err(UserErrorKind::MissingUserAgent.into()),

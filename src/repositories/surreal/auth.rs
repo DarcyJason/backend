@@ -16,7 +16,7 @@ pub trait AuthRepository {
     async fn create_user(&self, name: &str, email: &str, password: &str) -> AppResult<()>;
     async fn find_user_by_email(&self, email: &str) -> AppResult<Option<User>>;
     async fn find_user_by_id(&self, user_id: Thing) -> AppResult<Option<User>>;
-    async fn user_verified(&self, user_id: Thing) -> AppResult<()>;
+    async fn user_verified(&self, user_id: Thing, user_status: UserStatus) -> AppResult<()>;
     async fn reset_password(&self, user_id: Thing, new_password: &str) -> AppResult<()>;
 }
 
@@ -85,10 +85,10 @@ impl AuthRepository for SurrealClient {
         let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
         Ok(user)
     }
-    async fn user_verified(&self, user_id: Thing) -> AppResult<()> {
+    async fn user_verified(&self, user_id: Thing, user_status: UserStatus) -> AppResult<()> {
         let sql = r#"
             BEGIN TRANSACTION;
-                UPDATE users SET is_verified = true
+                UPDATE users SET is_verified = true, status = $user_status
                 WHERE
                     id = $user_id RETURN AFTER;
 
@@ -106,6 +106,7 @@ impl AuthRepository for SurrealClient {
             .client
             .query(sql)
             .bind(("user_id", user_id))
+            .bind(("user_status", user_status))
             .await
             .map_err(ExternalError::from)?;
         let user: Option<User> = result.take(0).map_err(ExternalError::from)?;
