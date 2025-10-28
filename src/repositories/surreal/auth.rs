@@ -92,13 +92,14 @@ impl AuthRepository for SurrealClient {
                 WHERE
                     id = $user_id RETURN AFTER;
 
-                UPDATE emails SET is_used = true
-                WHERE
-                    user_id = $user_id AND
-                    token_type = 'Verification' AND
-                    is_used = false
+                UPDATE (
+                    SELECT * FROM emails
+                    WHERE user_id = $user_id
+                        AND token_type = Verification
+                        AND is_used = false
                     ORDER BY created_at DESC
-                    LIMIT 1;
+                    LIMIT 1
+                ) SET is_used = true;
             COMMIT TRANSACTION;
         "#;
         let mut result = self

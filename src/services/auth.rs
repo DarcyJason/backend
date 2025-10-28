@@ -221,6 +221,7 @@ impl AuthService {
             AUTHORIZATION,
             format!("Bearer {}", access_token).parse().unwrap(),
         );
+        info!("✅ Finish Handling login");
         Ok((
             response_headers,
             jar,
