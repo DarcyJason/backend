@@ -1,20 +1,10 @@
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
+use std::net::{Ipv4Addr, SocketAddr};
 
-use dotenvy::dotenv;
 use tokio::net::TcpListener;
-use tracing::{error, info};
 
 use crate::{
-    config::AppConfig,
-    constants::logo::LOGO,
-    core::{app_state::AppState, logger::logger, shutdown::shutdown_signal},
+    core::{init::init_basics, shutdown::shutdown_signal},
     custom::{errors::external::ExternalError, result::AppResult},
-    database::client::DBClient,
-    routers::api_routers,
-    utils::color::gradient_text,
 };
 
 pub mod config;
@@ -35,22 +25,7 @@ pub mod utils;
 pub mod validation;
 
 pub async fn run() -> AppResult<()> {
-    dotenv().ok();
-    if let Err(e) = gradient_text(LOGO) {
-        error!("❌ Failed to initialize colorful logo: {}", e);
-    }
-    let _guard = logger();
-    let config = AppConfig::init().inspect_err(|e| {
-        error!("❌ Failed to initialize config: {}", e);
-    })?;
-    let db_client = DBClient::new(config.clone()).await?;
-    let port = config.backend_server.backend_port;
-    info!(
-        "✅ The backend server is running at http://localhost:{}",
-        port
-    );
-    let app_state = Arc::new(AppState::new(config, db_client));
-    let router = api_routers(app_state.clone());
+    let (_guard, router, port) = init_basics().await?;
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     let listener = TcpListener::bind(&address)
         .await
