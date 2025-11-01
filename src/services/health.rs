@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::response::IntoResponse;
+use axum::{http::StatusCode, response::IntoResponse};
 
 use crate::{
     config::AppConfig,
@@ -37,7 +37,12 @@ impl HealthService {
         } else if checks.0 && !checks.1 {
             Err(OtherErrorKind::Error("SurrealDB server error".to_string()).into())
         } else {
-            Ok(AppResponse::success(Some("UP".to_string()), None::<()>))
+            Ok(AppResponse::<()>::success(
+                StatusCode::OK.as_u16(),
+                "UP",
+                StatusCode::OK.canonical_reason().unwrap_or("OK"),
+                None,
+            ))
         }
     }
 }

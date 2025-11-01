@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::response::IntoResponse;
+use axum::{http::StatusCode, response::IntoResponse};
 
 use crate::{
     config::AppConfig,
@@ -20,6 +20,11 @@ impl UserService {
         Self { config, db_client }
     }
     pub async fn get_me(&self, user: User) -> AppResult<impl IntoResponse + use<>> {
-        Ok(AppResponse::success(None, user))
+        Ok(AppResponse::<User>::success(
+            StatusCode::OK.as_u16(),
+            "OK",
+            StatusCode::OK.canonical_reason().unwrap_or("OK"),
+            Some(user),
+        ))
     }
 }

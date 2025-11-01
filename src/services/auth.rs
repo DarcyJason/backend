@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
-    http::{HeaderMap, header::AUTHORIZATION},
+    http::{HeaderMap, StatusCode, header::AUTHORIZATION},
     response::IntoResponse,
 };
 use axum_extra::extract::{
@@ -24,7 +24,7 @@ use crate::{
             ForgetPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest,
             VerifyUserRequest,
         },
-        responses::login::LoginResponseData,
+        responses::{login::LoginResponseData, verify_user::VerifyUserResponseData},
     },
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
     models::{
@@ -88,9 +88,11 @@ impl AuthService {
             "✅ Finish Handling user registration successfully with email: {}",
             payload.email
         );
-        Ok(AppResponse::success(
-            Some("Register success".to_string()),
-            None::<()>,
+        Ok(AppResponse::<()>::success(
+            StatusCode::OK.as_u16(),
+            "register success",
+            StatusCode::OK.canonical_reason().unwrap_or("OK"),
+            None,
         ))
     }
     pub async fn login(
@@ -138,7 +140,12 @@ impl AuthService {
             return Ok((
                 response_headers,
                 jar,
-                AppResponse::success(Some("Check your email".to_string()), None),
+                AppResponse::<LoginResponseData>::success(
+                    StatusCode::OK.as_u16(),
+                    "Check your email",
+                    StatusCode::OK.canonical_reason().unwrap_or("OK"),
+                    None,
+                ),
             ));
         }
         let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
@@ -182,7 +189,12 @@ impl AuthService {
                 return Ok((
                     response_headers,
                     jar,
-                    AppResponse::success(Some("Check your email".to_string()), None),
+                    AppResponse::<LoginResponseData>::success(
+                        StatusCode::OK.as_u16(),
+                        "Check your email",
+                        StatusCode::OK.canonical_reason().unwrap_or("OK"),
+                        None,
+                    ),
                 ));
             }
         };
@@ -222,8 +234,10 @@ impl AuthService {
         Ok((
             response_headers,
             jar,
-            AppResponse::success(
-                Some(format!("Login successfully, {}", user.email)),
+            AppResponse::<LoginResponseData>::success(
+                StatusCode::OK.as_u16(),
+                &format!("Login successfully, {}", user.email),
+                StatusCode::OK.canonical_reason().unwrap_or("OK"),
                 Some(LoginResponseData { device }),
             ),
         ))
@@ -254,7 +268,12 @@ impl AuthService {
         let updated_jar = jar.remove("refresh_token").add(new_refresh_token_cookie);
         Ok((
             updated_jar,
-            AppResponse::success(Some("Logout Success".to_string()), None::<()>),
+            AppResponse::<()>::success(
+                StatusCode::OK.as_u16(),
+                "Logout Success",
+                StatusCode::OK.canonical_reason().unwrap_or("OK"),
+                None,
+            ),
         ))
     }
     pub async fn verify_user(
@@ -270,9 +289,7 @@ impl AuthService {
             .find_user_by_email(&payload.email)
             .await?
         {
-            Some(user) => {
-                user
-            }
+            Some(user) => user,
             None => return Err(UserErrorKind::UserNotFound.into()),
         };
         let email = match self
@@ -281,9 +298,7 @@ impl AuthService {
             .find_email_by_user_id_and_email_type(user.id.clone(), EmailType::Verification)
             .await?
         {
-            Some(email) => {
-                email
-            }
+            Some(email) => email,
             None => return Err(EmailErrorKind::EmailNotFound.into()),
         };
         if email.email_token != payload.email_token {
@@ -309,9 +324,11 @@ impl AuthService {
                 addr.ip().to_string(),
             )
             .await?;
-        Ok(AppResponse::success(
-            Some("Verify your account successfully".to_string()),
-            new_device,
+        Ok(AppResponse::<VerifyUserResponseData>::success(
+            StatusCode::OK.as_u16(),
+            "Verify your account successfully",
+            StatusCode::OK.canonical_reason().unwrap_or("OK"),
+            Some(VerifyUserResponseData { device: new_device }),
         ))
     }
     pub async fn forget_password(
@@ -349,9 +366,11 @@ impl AuthService {
         )
         .await
         .map_err(ExternalError::from)?;
-        Ok(AppResponse::success(
-            Some("An reset password email has been sent, please check your email".to_string()),
-            None::<()>,
+        Ok(AppResponse::<()>::success(
+            StatusCode::OK.as_u16(),
+            "An reset password email has been sent, please check your email",
+            StatusCode::OK.canonical_reason().unwrap_or("OK"),
+            None,
         ))
     }
     pub async fn reset_password(
@@ -383,9 +402,11 @@ impl AuthService {
                 .reset_password(user.id.clone(), &payload.new_password)
                 .await?;
         }
-        Ok(AppResponse::success(
-            Some("Reset your password successfully".to_string()),
-            None::<()>,
+        Ok(AppResponse::<()>::success(
+            StatusCode::OK.as_u16(),
+            "Reset your password successfully",
+            StatusCode::OK.canonical_reason().unwrap_or("OK"),
+            None,
         ))
     }
 }
