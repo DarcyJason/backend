@@ -1,6 +1,6 @@
 # Rust backend (Axum)
 
-Chinese version [简体中文](/docs/zh-CN/README.md)
+[简体中文](./README_zh_CN.md) | [English](./README.md)
 
 ## Content
 
@@ -8,7 +8,7 @@ Chinese version [简体中文](/docs/zh-CN/README.md)
 
 [Preparations](#preparations)
 
-[API Book](/docs/api_book.md)
+[API Book](./docs/en/api_book.md)
 
 ## Introduction
 
