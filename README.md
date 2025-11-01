@@ -1,5 +1,7 @@
 # Rust backend (Axum)
 
+Chinese version [简体中文](/docs/zh-CN/README.md)
+
 ## Content
 
 [Introduction](#introduction)
