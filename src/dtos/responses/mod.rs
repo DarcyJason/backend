@@ -1,2 +1,2 @@
-pub mod login;
-pub mod verify_user;
+pub mod auth;
+pub mod user;

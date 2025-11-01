@@ -24,7 +24,7 @@ use crate::{
             ForgetPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest,
             VerifyUserRequest,
         },
-        responses::{login::LoginResponseData, verify_user::VerifyUserResponseData},
+        responses::{auth::LoginResponseData, auth::VerifyUserResponseData},
     },
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
     models::{

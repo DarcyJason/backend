@@ -6,6 +6,7 @@ use crate::{
     config::AppConfig,
     custom::{response::AppResponse, result::AppResult},
     database::client::DBClient,
+    dtos::responses::user::MeResponseData,
     models::user::User,
 };
 
@@ -20,11 +21,12 @@ impl UserService {
         Self { config, db_client }
     }
     pub async fn get_me(&self, user: User) -> AppResult<impl IntoResponse + use<>> {
-        Ok(AppResponse::<User>::success(
+        let me = MeResponseData::from(user);
+        Ok(AppResponse::<MeResponseData>::success(
             StatusCode::OK.as_u16(),
             "OK",
             StatusCode::OK.canonical_reason().unwrap_or("OK"),
-            Some(user),
+            Some(me),
         ))
     }
 }
