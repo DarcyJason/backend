@@ -4,7 +4,8 @@ use crate::models::device::Device;
 
 #[derive(Debug, Serialize)]
 pub struct LoginResponseData {
-    pub device: Device,
+    pub device: Option<Device>,
+    pub need_verification: bool,
 }
 
 #[derive(Debug, Serialize)]

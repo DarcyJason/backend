@@ -144,7 +144,10 @@ impl AuthService {
                     StatusCode::OK.as_u16(),
                     "Check your email",
                     StatusCode::OK.canonical_reason().unwrap_or("OK"),
-                    None,
+                    Some(LoginResponseData {
+                        device: None,
+                        need_verification: true,
+                    }),
                 ),
             ));
         }
@@ -193,7 +196,10 @@ impl AuthService {
                         StatusCode::OK.as_u16(),
                         "Check your email",
                         StatusCode::OK.canonical_reason().unwrap_or("OK"),
-                        None,
+                        Some(LoginResponseData {
+                            device: None,
+                            need_verification: true,
+                        }),
                     ),
                 ));
             }
@@ -238,7 +244,10 @@ impl AuthService {
                 StatusCode::OK.as_u16(),
                 &format!("Login successfully, {}", user.email),
                 StatusCode::OK.canonical_reason().unwrap_or("OK"),
-                Some(LoginResponseData { device }),
+                Some(LoginResponseData {
+                    device: Some(device),
+                    need_verification: false,
+                }),
             ),
         ))
     }
@@ -276,7 +285,7 @@ impl AuthService {
             ),
         ))
     }
-    pub async fn verify_user(
+    pub async fn verify_email(
         &self,
         headers: HeaderMap,
         addr: SocketAddr,

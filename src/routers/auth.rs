@@ -4,7 +4,7 @@ use axum::{Router, middleware, routing::post};
 
 use crate::{
     core::app_state::AppState,
-    handlers::auth::{forget_password, login, logout, register, reset_password, verify_user},
+    handlers::auth::{forget_password, login, logout, register, reset_password, verify_email},
     middlewares::auth::{auth, role_check},
     models::user::UserRole,
 };
@@ -21,7 +21,7 @@ pub fn auth_routers(app_state: Arc<AppState>) -> Router {
                     role_check(req, next, vec![UserRole::Admin, UserRole::User])
                 })),
         )
-        .route("/verify-user", post(verify_user))
+        .route("/verify-email", post(verify_email))
         .route("/forget-password", post(forget_password))
         .route("/reset-password", post(reset_password))
         .with_state(app_state);

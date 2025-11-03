@@ -50,7 +50,7 @@ pub async fn logout(
 }
 
 #[instrument(skip(app_state, headers))]
-pub async fn verify_user(
+pub async fn verify_email(
     State(app_state): State<Arc<AppState>>,
     headers: HeaderMap,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -58,7 +58,7 @@ pub async fn verify_user(
 ) -> AppResult<impl IntoResponse> {
     app_state
         .auth_service
-        .verify_user(headers, addr, payload)
+        .verify_email(headers, addr, payload)
         .await
 }
 
