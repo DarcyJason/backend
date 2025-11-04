@@ -5,7 +5,7 @@ use serde::Serialize;
 use surrealdb::sql::Thing;
 
 #[derive(Debug, Serialize)]
-pub struct MeResponseData {
+pub struct MeVO {
     pub id: Thing,
     pub name: String,
     pub role: UserRole,
@@ -14,7 +14,7 @@ pub struct MeResponseData {
     pub created_at: DateTime<Utc>,
 }
 
-impl From<User> for MeResponseData {
+impl From<User> for MeVO {
     fn from(user: User) -> Self {
         Self {
             id: user.id,

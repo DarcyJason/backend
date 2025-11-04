@@ -12,7 +12,7 @@ pub mod constants;
 pub mod core;
 pub mod custom;
 pub mod database;
-pub mod dtos;
+pub mod dto;
 pub mod handlers;
 pub mod lazy;
 pub mod mail;
@@ -23,6 +23,7 @@ pub mod routers;
 pub mod services;
 pub mod utils;
 pub mod validation;
+pub mod vo;
 
 pub async fn run() -> AppResult<()> {
     let (_guard, router, port) = init_basics().await?;

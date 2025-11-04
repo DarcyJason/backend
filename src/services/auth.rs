@@ -19,13 +19,13 @@ use crate::{
         result::AppResult,
     },
     database::client::DBClient,
-    dtos::{
-        requests::auth::{
-            ForgetPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest,
-            VerifyUserRequest,
+    dto::{
+        auth::{
+            ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO,
+            VerifyUserDTO,
         },
-        responses::{auth::LoginResponseData, auth::VerifyUserResponseData},
     },
+    vo::{auth::LoginVO, auth::VerifyUserVO},
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
     models::{
         email::EmailType,
@@ -56,7 +56,7 @@ impl AuthService {
     pub fn new(config: Arc<AppConfig>, db_client: Arc<DBClient>) -> Self {
         Self { config, db_client }
     }
-    pub async fn register(&self, payload: RegisterRequest) -> AppResult<impl IntoResponse + use<>> {
+    pub async fn register(&self, payload: RegisterDTO) -> AppResult<impl IntoResponse + use<>> {
         validate_register_payload(&payload)?;
         if self
             .db_client
@@ -99,7 +99,7 @@ impl AuthService {
         &self,
         headers: HeaderMap,
         jar: CookieJar,
-        payload: LoginRequest,
+        payload: LoginDTO,
     ) -> AppResult<impl IntoResponse + use<>> {
         validate_login_payload(&payload)?;
         let user = match self
@@ -140,11 +140,11 @@ impl AuthService {
             return Ok((
                 response_headers,
                 jar,
-                AppResponse::<LoginResponseData>::success(
+                AppResponse::<LoginVO>::success(
                     StatusCode::OK.as_u16(),
                     "Check your email",
                     StatusCode::OK.canonical_reason().unwrap_or("OK"),
-                    Some(LoginResponseData {
+                    Some(LoginVO {
                         device: None,
                         need_verification: true,
                     }),
@@ -192,11 +192,11 @@ impl AuthService {
                 return Ok((
                     response_headers,
                     jar,
-                    AppResponse::<LoginResponseData>::success(
+                    AppResponse::<LoginVO>::success(
                         StatusCode::OK.as_u16(),
                         "Check your email",
                         StatusCode::OK.canonical_reason().unwrap_or("OK"),
-                        Some(LoginResponseData {
+                        Some(LoginVO {
                             device: None,
                             need_verification: true,
                         }),
@@ -240,11 +240,11 @@ impl AuthService {
         Ok((
             response_headers,
             jar,
-            AppResponse::<LoginResponseData>::success(
+            AppResponse::<LoginVO>::success(
                 StatusCode::OK.as_u16(),
                 &format!("Login successfully, {}", user.email),
                 StatusCode::OK.canonical_reason().unwrap_or("OK"),
-                Some(LoginResponseData {
+                Some(LoginVO {
                     device: Some(device),
                     need_verification: false,
                 }),
@@ -289,7 +289,7 @@ impl AuthService {
         &self,
         headers: HeaderMap,
         addr: SocketAddr,
-        payload: VerifyUserRequest,
+        payload: VerifyUserDTO,
     ) -> AppResult<impl IntoResponse + use<>> {
         validate_verify_user_payload(&payload)?;
         let user = match self
@@ -333,16 +333,16 @@ impl AuthService {
                 addr.ip().to_string(),
             )
             .await?;
-        Ok(AppResponse::<VerifyUserResponseData>::success(
+        Ok(AppResponse::<VerifyUserVO>::success(
             StatusCode::OK.as_u16(),
             "Verify your account successfully",
             StatusCode::OK.canonical_reason().unwrap_or("OK"),
-            Some(VerifyUserResponseData { device: new_device }),
+            Some(VerifyUserVO { device: new_device }),
         ))
     }
     pub async fn forget_password(
         &self,
-        payload: ForgetPasswordRequest,
+        payload: ForgetPasswordDTO,
     ) -> AppResult<impl IntoResponse + use<>> {
         validate_forget_password_payload(&payload)?;
         let user = match self
@@ -384,7 +384,7 @@ impl AuthService {
     }
     pub async fn reset_password(
         &self,
-        payload: ResetPasswordRequest,
+        payload: ResetPasswordDTO,
     ) -> AppResult<impl IntoResponse + use<>> {
         validate_reset_password_payload(&payload)?;
         let user = match self
