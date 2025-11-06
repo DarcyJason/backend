@@ -15,17 +15,11 @@ use crate::{
     config::AppConfig,
     custom::{
         errors::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
-        response::AppResponse,
+        response::api::AppResponse,
         result::AppResult,
     },
     database::client::DBClient,
-    dto::{
-        auth::{
-            ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO,
-            VerifyUserDTO,
-        },
-    },
-    vo::{auth::LoginVO, auth::VerifyUserVO},
+    dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
     models::{
         email::EmailType,
@@ -44,6 +38,7 @@ use crate::{
         validate_forget_password_payload, validate_login_payload, validate_register_payload,
         validate_reset_password_payload, validate_verify_user_payload,
     },
+    vo::{auth::LoginVO, auth::VerifyUserVO},
 };
 
 #[derive(Debug)]

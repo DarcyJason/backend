@@ -3,7 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-use crate::custom::{errors::error_trait::ErrorKind, response::AppResponse};
+use crate::custom::{errors::error_trait::ErrorKind, response::api::AppResponse};
 
 pub mod access_token;
 pub mod device;

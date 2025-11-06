@@ -4,10 +4,10 @@ use axum::{http::StatusCode, response::IntoResponse};
 
 use crate::{
     config::AppConfig,
-    custom::{response::AppResponse, result::AppResult},
+    custom::{response::api::AppResponse, result::AppResult},
     database::client::DBClient,
-    vo::user::MeVO,
     models::user::User,
+    vo::user::MeVO,
 };
 
 #[derive(Debug)]

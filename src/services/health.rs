@@ -4,7 +4,7 @@ use axum::{http::StatusCode, response::IntoResponse};
 
 use crate::{
     config::AppConfig,
-    custom::{errors::other::OtherErrorKind, response::AppResponse, result::AppResult},
+    custom::{errors::other::OtherErrorKind, response::api::AppResponse, result::AppResult},
     database::client::DBClient,
     repositories::{
         redis::health::HealthRepository,
