@@ -23,7 +23,7 @@ pub async fn register(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<RegisterDTO>,
 ) -> AppResult<impl IntoResponse> {
-    app_state.auth_service.register(payload).await
+    app_state.services.auth.register(payload).await
 }
 
 #[instrument(skip(app_state, headers, jar))]
@@ -35,7 +35,7 @@ pub async fn login(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(payload): Json<LoginDTO>,
 ) -> AppResult<impl IntoResponse> {
-    app_state.auth_service.login(headers, jar, payload).await
+    app_state.services.auth.login(headers, jar, payload).await
 }
 
 #[instrument(skip(app_state, jar, user))]
@@ -44,7 +44,7 @@ pub async fn logout(
     jar: CookieJar,
     Extension(user): Extension<User>,
 ) -> AppResult<impl IntoResponse> {
-    app_state.auth_service.logout(jar, user).await
+    app_state.services.auth.logout(jar, user).await
 }
 
 #[instrument(skip(app_state, headers))]
@@ -55,7 +55,8 @@ pub async fn verify_email(
     Json(payload): Json<VerifyUserDTO>,
 ) -> AppResult<impl IntoResponse> {
     app_state
-        .auth_service
+        .services
+        .auth
         .verify_email(headers, addr, payload)
         .await
 }
@@ -65,7 +66,7 @@ pub async fn forget_password(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<ForgetPasswordDTO>,
 ) -> AppResult<impl IntoResponse> {
-    app_state.auth_service.forget_password(payload).await
+    app_state.services.auth.forget_password(payload).await
 }
 
 #[instrument(skip(app_state))]
@@ -73,5 +74,5 @@ pub async fn reset_password(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<ResetPasswordDTO>,
 ) -> AppResult<impl IntoResponse> {
-    app_state.auth_service.reset_password(payload).await
+    app_state.services.auth.reset_password(payload).await
 }

@@ -1,3 +1,4 @@
+use resend_rs::Resend;
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
@@ -12,8 +13,8 @@ use time::Duration;
 use tracing::{error, info};
 
 use crate::{
-    core::{config::AppConfig, response::AppResponse, result::AppResult},
     core::errors::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
+    core::{config::AppConfig, response::AppResponse, result::AppResult},
     database::client::DBClient,
     dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
@@ -41,11 +42,16 @@ use crate::{
 pub struct AuthService {
     pub config: Arc<AppConfig>,
     pub db_client: Arc<DBClient>,
+    pub resend: Arc<Resend>,
 }
 
 impl AuthService {
-    pub fn new(config: Arc<AppConfig>, db_client: Arc<DBClient>) -> Self {
-        Self { config, db_client }
+    pub fn new(config: Arc<AppConfig>, db_client: Arc<DBClient>, resend: Arc<Resend>) -> Self {
+        Self {
+            config,
+            db_client,
+            resend,
+        }
     }
     pub async fn register(&self, payload: RegisterDTO) -> AppResult<impl IntoResponse + use<>> {
         validate_register_payload(&payload)?;
@@ -74,11 +80,6 @@ impl AuthService {
                 return Err(UserErrorKind::CreateUserFailed.into());
             }
         }
-        info!("✅ Start creating trusted device");
-        info!(
-            "✅ Finish Handling user registration successfully with email: {}",
-            payload.email
-        );
         Ok(AppResponse::<()>::success(
             StatusCode::OK.as_u16(),
             "register success",
@@ -119,11 +120,11 @@ impl AuthService {
                 .replace("{{username}}", &user.name)
                 .replace("{{email_token}}", &email_token);
             let _email = send_mail(
+                &self.resend,
                 &self.config.mail_server.from_email,
                 vec![&user.email],
                 "Verification",
                 &html,
-                &self.config.mail_server.resend_api_key,
             )
             .await
             .map_err(ExternalError::from)?;
@@ -171,11 +172,11 @@ impl AuthService {
                     .replace("{{username}}", &user.name)
                     .replace("{{email_token}}", &email_token);
                 let _email = send_mail(
+                    &self.resend,
                     &self.config.mail_server.from_email,
                     vec![&user.email],
                     "Verification",
                     &html,
-                    &self.config.mail_server.resend_api_key,
                 )
                 .await
                 .map_err(ExternalError::from)?;
@@ -358,11 +359,11 @@ impl AuthService {
             .replace("{{username}}", &user.name)
             .replace("{{email_token}}", &email_token);
         let _email = send_mail(
+            &self.resend,
             &self.config.mail_server.from_email,
             vec![&user.email],
             "Reset password",
             &html,
-            &self.config.mail_server.resend_api_key,
         )
         .await
         .map_err(ExternalError::from)?;
