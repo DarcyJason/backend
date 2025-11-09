@@ -3,17 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-use crate::custom::{errors::error_trait::ErrorKind, response::api::AppResponse};
-
-pub mod access_token;
-pub mod device;
-pub mod email;
-pub mod error_trait;
-pub mod external;
-pub mod other;
-pub mod refresh_token;
-pub mod user;
-pub mod validation;
+use crate::{core::response::AppResponse, core::errors::error_trait::ErrorKind};
 
 pub struct AppError {
     kind: Box<dyn ErrorKind>,

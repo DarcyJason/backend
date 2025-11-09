@@ -2,10 +2,8 @@ use async_trait::async_trait;
 use surrealdb::sql::Thing;
 
 use crate::{
-    custom::{
-        errors::{device::DeviceErrorKind, external::ExternalError},
-        result::AppResult,
-    },
+    core::result::AppResult,
+    core::errors::{device::DeviceErrorKind, external::ExternalError},
     database::surreal::client::SurrealClient,
     models::device::Device,
 };

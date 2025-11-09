@@ -1,4 +1,4 @@
-use backend::{custom::result::AppResult, run};
+use backend::{core::result::AppResult, run};
 
 #[tokio::main]
 async fn main() -> AppResult<()> {

@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use thiserror::Error;
 
-use crate::custom::errors::error_trait::ErrorKind;
+use crate::core::errors::error_trait::ErrorKind;
 
 #[derive(Debug, Error)]
 pub enum OtherErrorKind {

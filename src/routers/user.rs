@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{Router, middleware, routing::get};
 
 use crate::{
-    core::app_state::AppState,
+    core::state::AppState,
     handlers::user::get_me,
     middlewares::auth::{auth, role_check},
     models::user::UserRole,

@@ -1,4 +1,4 @@
-use crate::custom::errors::error_trait::ErrorKind;
+use crate::core::errors::error_trait::ErrorKind;
 use axum::http::StatusCode;
 use thiserror::Error;
 

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use redis::AsyncTypedCommands;
 
 use crate::{
-    custom::{errors::external::ExternalError, result::AppResult},
+    core::result::AppResult, core::errors::external::ExternalError,
     database::redis::client::RedisClient,
 };
 

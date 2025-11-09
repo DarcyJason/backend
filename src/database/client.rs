@@ -1,5 +1,5 @@
-use crate::config::AppConfig;
-use crate::custom::result::AppResult;
+use crate::core::config::AppConfig;
+use crate::core::result::AppResult;
 use crate::database::redis::client::RedisClient;
 use crate::database::surreal::client::SurrealClient;
 

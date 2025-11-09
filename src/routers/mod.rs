@@ -2,7 +2,8 @@ use axum::Router;
 use std::sync::Arc;
 
 use crate::{
-    core::{app_state::AppState, cors::cors},
+    core::state::AppState,
+    middlewares::cors::cors,
     routers::{auth::auth_routers, health::health_router, user::user_routers},
 };
 

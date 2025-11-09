@@ -1,7 +1,7 @@
 use colorgrad::{Color, Gradient, GradientBuilder, LinearGradient};
 use owo_colors::OwoColorize;
 
-use crate::custom::{errors::external::ExternalError, result::AppResult};
+use crate::{core::result::AppResult, core::errors::external::ExternalError};
 
 pub fn gradient_text(text: &str) -> AppResult<()> {
     let grad = GradientBuilder::new()

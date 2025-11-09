@@ -3,8 +3,7 @@ use std::sync::Arc;
 use axum::{http::StatusCode, response::IntoResponse};
 
 use crate::{
-    config::AppConfig,
-    custom::{response::api::AppResponse, result::AppResult},
+    core::{config::AppConfig, response::AppResponse, result::AppResult},
     database::client::DBClient,
     models::user::User,
     vo::user::MeVO,

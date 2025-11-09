@@ -1,8 +1,6 @@
 use crate::{
-    custom::{
-        errors::{external::ExternalError, refresh_token::RefreshTokenErrorKind},
-        result::AppResult,
-    },
+    core::result::AppResult,
+    core::errors::{external::ExternalError, refresh_token::RefreshTokenErrorKind},
     database::surreal::client::SurrealClient,
     models::token::RefreshToken,
 };

@@ -1,4 +1,4 @@
-use super::api::{AppResponse, AppResponseBody};
+use crate::core::response::{AppResponse, AppResponseBody};
 use axum::http::StatusCode;
 use serde::Serialize;
 

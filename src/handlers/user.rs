@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{Extension, extract::State, response::IntoResponse};
 
-use crate::{core::app_state::AppState, custom::result::AppResult, models::user::User};
+use crate::{core::result::AppResult, core::state::AppState, models::user::User};
 
 pub async fn get_me(
     State(app_state): State<Arc<AppState>>,

@@ -10,11 +10,9 @@ use tracing::instrument;
 
 use crate::dto::auth::LoginDTO;
 use crate::{
-    core::app_state::AppState,
-    custom::result::AppResult,
-    dto::auth::{
-        ForgetPasswordDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO,
-    },
+    core::result::AppResult,
+    core::state::AppState,
+    dto::auth::{ForgetPasswordDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
     models::user::User,
 };
 

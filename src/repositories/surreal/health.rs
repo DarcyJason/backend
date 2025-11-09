@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{custom::result::AppResult, database::surreal::client::SurrealClient};
+use crate::{core::result::AppResult, database::surreal::client::SurrealClient};
 
 #[async_trait]
 pub trait HealthRepository {

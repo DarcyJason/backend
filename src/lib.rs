@@ -3,18 +3,17 @@ use std::net::{Ipv4Addr, SocketAddr};
 use tokio::net::TcpListener;
 
 use crate::{
-    core::{init::init_basics, shutdown::shutdown_signal},
-    custom::{errors::external::ExternalError, result::AppResult},
+    core::{init::init_app, result::AppResult},
+    core::errors::external::ExternalError,
+    utils::shutdown::shutdown_signal,
 };
 
 pub mod config;
 pub mod constants;
 pub mod core;
-pub mod custom;
 pub mod database;
 pub mod dto;
 pub mod handlers;
-pub mod lazy;
 pub mod mail;
 pub mod middlewares;
 pub mod models;
@@ -26,7 +25,7 @@ pub mod validation;
 pub mod vo;
 
 pub async fn run() -> AppResult<()> {
-    let (_guard, router, port) = init_basics().await?;
+    let (_guard, router, port) = init_app().await?;
     let address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     let listener = TcpListener::bind(&address)
         .await

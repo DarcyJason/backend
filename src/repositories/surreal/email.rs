@@ -1,6 +1,6 @@
-use crate::custom::errors::email::EmailErrorKind;
-use crate::custom::errors::external::ExternalError;
-use crate::custom::result::AppResult;
+use crate::core::result::AppResult;
+use crate::core::errors::email::EmailErrorKind;
+use crate::core::errors::external::ExternalError;
 use crate::database::surreal::client::SurrealClient;
 use crate::models::email::{Email, EmailType};
 use async_trait::async_trait;

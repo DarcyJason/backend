@@ -3,8 +3,8 @@ use std::sync::Arc;
 use axum::{http::StatusCode, response::IntoResponse};
 
 use crate::{
-    config::AppConfig,
-    custom::{errors::other::OtherErrorKind, response::api::AppResponse, result::AppResult},
+    core::{config::AppConfig, response::AppResponse, result::AppResult},
+    core::errors::other::OtherErrorKind,
     database::client::DBClient,
     repositories::{
         redis::health::HealthRepository,

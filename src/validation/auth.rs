@@ -1,12 +1,10 @@
 use validator::ValidateEmail;
 
 use crate::{
-    custom::{errors::validation::ValidationErrorKind, result::AppResult},
-    dto::auth::{
-        ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO,
-        VerifyUserDTO,
-    },
-    lazy::regex::{NAME_REGEX, PASSWORD_REGEX},
+    core::result::AppResult,
+    core::errors::validation::ValidationErrorKind,
+    dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
+    utils::regex::{NAME_REGEX, PASSWORD_REGEX},
 };
 
 pub fn validate_register_payload(payload: &RegisterDTO) -> AppResult<()> {

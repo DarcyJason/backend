@@ -12,12 +12,8 @@ use time::Duration;
 use tracing::{error, info};
 
 use crate::{
-    config::AppConfig,
-    custom::{
-        errors::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
-        response::api::AppResponse,
-        result::AppResult,
-    },
+    core::{config::AppConfig, response::AppResponse, result::AppResult},
+    core::errors::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
     database::client::DBClient,
     dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
     mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
@@ -38,7 +34,7 @@ use crate::{
         validate_forget_password_payload, validate_login_payload, validate_register_payload,
         validate_reset_password_payload, validate_verify_user_payload,
     },
-    vo::{auth::LoginVO, auth::VerifyUserVO},
+    vo::auth::{LoginVO, VerifyUserVO},
 };
 
 #[derive(Debug)]

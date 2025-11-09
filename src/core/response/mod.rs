@@ -1,3 +1,5 @@
+pub mod builder;
+
 use axum::{
     Json,
     http::StatusCode,

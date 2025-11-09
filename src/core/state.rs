@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    config::AppConfig,
+    core::config::AppConfig,
     database::client::DBClient,
     services::{auth::AuthService, health::HealthService, user::UserService},
 };
