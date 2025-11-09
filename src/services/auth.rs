@@ -13,7 +13,7 @@ use time::Duration;
 use tracing::{error, info};
 
 use crate::{
-    core::errors::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
+    core::error::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
     core::{config::AppConfig, response::AppResponse, result::AppResult},
     database::client::DBClient,
     dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},

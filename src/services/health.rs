@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{http::StatusCode, response::IntoResponse};
 
 use crate::{
-    core::errors::other::OtherErrorKind,
+    core::error::other::OtherErrorKind,
     core::{config::AppConfig, response::AppResponse, result::AppResult},
     database::client::DBClient,
     repositories::{

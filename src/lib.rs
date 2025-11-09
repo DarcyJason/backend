@@ -3,8 +3,8 @@ use std::net::{Ipv4Addr, SocketAddr};
 use tokio::net::TcpListener;
 
 use crate::{
+    core::error::external::ExternalError,
     core::{init::init_app, result::AppResult},
-    core::errors::external::ExternalError,
     utils::shutdown::shutdown_signal,
 };
 

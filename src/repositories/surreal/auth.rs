@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use surrealdb::sql::Thing;
 
 use crate::{
+    core::error::{external::ExternalError, user::UserErrorKind},
     core::result::AppResult,
-    core::errors::{external::ExternalError, user::UserErrorKind},
     database::surreal::client::SurrealClient,
     models::user::{User, UserRole, UserStatus},
     utils::password::hash_password,

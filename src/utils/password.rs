@@ -5,8 +5,8 @@ use argon2::PasswordVerifier;
 use argon2::password_hash::SaltString;
 use argon2::password_hash::rand_core::OsRng;
 
+use crate::core::error::validation::ValidationErrorKind;
 use crate::core::result::AppResult;
-use crate::core::errors::validation::ValidationErrorKind;
 
 pub fn hash_password(password: String) -> AppResult<(String, String)> {
     let salt = SaltString::generate(&mut OsRng);

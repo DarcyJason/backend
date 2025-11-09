@@ -1,8 +1,8 @@
 use validator::ValidateEmail;
 
 use crate::{
+    core::error::validation::ValidationErrorKind,
     core::result::AppResult,
-    core::errors::validation::ValidationErrorKind,
     dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
     utils::regex::{NAME_REGEX, PASSWORD_REGEX},
 };

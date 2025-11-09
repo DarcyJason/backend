@@ -9,8 +9,8 @@ use crate::config::{
     backend_server::BackendServerConfig, frontend_server::FrontendServerConfig,
     mail_server::MailServerConfig,
 };
+use crate::core::error::external::ExternalError;
 use crate::core::result::AppResult;
-use crate::core::errors::external::ExternalError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {

@@ -5,8 +5,8 @@ use surrealdb::{
 };
 
 use crate::{
-    config::surreal_server::SurrealServerConfig, core::result::AppResult,
-    core::errors::external::ExternalError,
+    config::surreal_server::SurrealServerConfig, core::error::external::ExternalError,
+    core::result::AppResult,
 };
 
 #[derive(Debug, Clone)]

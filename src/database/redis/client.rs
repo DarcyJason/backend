@@ -1,6 +1,6 @@
 use crate::{
-    config::redis_server::RedisServerConfig, core::result::AppResult,
-    core::errors::external::ExternalError,
+    config::redis_server::RedisServerConfig, core::error::external::ExternalError,
+    core::result::AppResult,
 };
 use redis::aio::MultiplexedConnection;
 

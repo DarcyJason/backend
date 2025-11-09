@@ -1,9 +1,19 @@
+pub mod access_token;
+pub mod device;
+pub mod email;
+pub mod error_trait;
+pub mod external;
+pub mod other;
+pub mod refresh_token;
+pub mod user;
+pub mod validation;
+
 use axum::{
     Json,
     response::{IntoResponse, Response},
 };
 
-use crate::{core::response::AppResponse, core::errors::error_trait::ErrorKind};
+use crate::{core::error::error_trait::ErrorKind, core::response::AppResponse};
 
 pub struct AppError {
     kind: Box<dyn ErrorKind>,

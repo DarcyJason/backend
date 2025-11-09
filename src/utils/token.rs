@@ -4,7 +4,7 @@ use surrealdb::sql::Thing;
 use uuid::Uuid;
 
 use crate::{
-    core::result::AppResult, core::errors::external::ExternalError, models::token::TokenClaims,
+    core::error::external::ExternalError, core::result::AppResult, models::token::TokenClaims,
 };
 
 pub fn generate_access_token(
