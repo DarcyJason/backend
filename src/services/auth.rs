@@ -13,11 +13,14 @@ use time::Duration;
 use tracing::{error, info};
 
 use crate::{
-    core::error::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
-    core::{config::AppConfig, response::AppResponse, result::AppResult},
+    core::{
+        config::AppConfig,
+        error::{email::EmailErrorKind, external::ExternalError, user::UserErrorKind},
+        response::AppResponse,
+        result::AppResult,
+    },
     database::client::DBClient,
     dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
-    mail::{send_mail::send_mail, templates::verification_email_html::VERIFICATION_EMAIL_HTML},
     models::{
         email::EmailType,
         user::{User, UserStatus},
@@ -26,8 +29,10 @@ use crate::{
         auth::AuthRepository, device::DeviceRepository, email::EmailRepository,
         refresh_token::RefreshTokenRepository,
     },
+    templates::verification_email_html::VERIFICATION_EMAIL_HTML,
     utils::{
         device::parse_user_agent_detailed,
+        mail::send_mail,
         password::compare_hashed_password,
         token::{generate_access_token, generate_email_token, generate_refresh_token},
     },
