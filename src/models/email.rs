@@ -19,3 +19,12 @@ pub enum EmailType {
     Verification,
     PasswordReset,
 }
+
+impl std::fmt::Display for EmailType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EmailType::Verification => write!(f, "verification"),
+            EmailType::PasswordReset => write!(f, "password_reset"),
+        }
+    }
+}

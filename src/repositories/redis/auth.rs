@@ -1,7 +1,7 @@
 use crate::{
     core::{error::external::ExternalError, result::AppResult},
     database::redis::client::RedisClient,
-    models::user::User,
+    models::{email::EmailType, user::User},
 };
 use async_trait::async_trait;
 use redis::AsyncTypedCommands;
@@ -12,9 +12,18 @@ pub trait AuthCacheRepository {
     async fn set_user(&self, user: &User, ttl_seconds: u64) -> AppResult<()>;
     async fn get_user(&self, user_id: &Thing) -> AppResult<Option<User>>;
     async fn delete_user(&self, user_id: &Thing) -> AppResult<()>;
-    async fn set_temp_token(&self, token: &str, user_id: &Thing, ttl_seconds: u64)
-    -> AppResult<()>;
-    async fn use_temp_token(&self, token: &str) -> AppResult<Option<Thing>>;
+    async fn set_email_token(
+        &self,
+        email_token_type: EmailType,
+        email_token: &str,
+        user_id: &Thing,
+        ttl_seconds: u64,
+    ) -> AppResult<()>;
+    async fn use_email_token(
+        &self,
+        email_token_type: EmailType,
+        email_token: &str,
+    ) -> AppResult<Option<Thing>>;
     async fn add_jti_to_blacklist(&self, jti: &str, ttl_seconds: u64) -> AppResult<()>;
     async fn is_jti_in_blacklist(&self, jti: &str) -> AppResult<bool>;
 }
@@ -48,35 +57,29 @@ impl AuthCacheRepository for RedisClient {
         conn.del(key).await.map_err(ExternalError::from)?;
         Ok(())
     }
-    async fn set_temp_token(
+    async fn set_email_token(
         &self,
-        token: &str,
+        email_token_type: EmailType,
+        email_token: &str,
         user_id: &Thing,
         ttl_seconds: u64,
     ) -> AppResult<()> {
-        let key = format!("temp_token:{}", token);
+        let key = format!("temp_token:{}:{}", email_token_type, email_token);
         let mut conn = self.conn.clone();
         conn.set_ex(key, user_id.to_string(), ttl_seconds)
             .await
             .map_err(ExternalError::from)?;
         Ok(())
     }
-    async fn use_temp_token(&self, token: &str) -> AppResult<Option<Thing>> {
-        let key = format!("temp_token:{}", token);
+    async fn use_email_token(
+        &self,
+        email_token_type: EmailType,
+        email_token: &str,
+    ) -> AppResult<Option<Thing>> {
+        let key = format!("temp_token:{}:{}", email_token_type, email_token);
         let mut conn = self.conn.clone();
         let user_id_str: Option<String> = conn.get_del(key).await.map_err(ExternalError::from)?;
-        match user_id_str {
-            Some(id_str) => {
-                let parts: Vec<&str> = id_str.split(':').collect();
-                if parts.len() == 2 {
-                    let thing: Thing = (parts[0].to_string(), parts[1].to_string()).into();
-                    Ok(Some(thing))
-                } else {
-                    Ok(None)
-                }
-            }
-            None => Ok(None),
-        }
+        Ok(user_id_str.and_then(|s| s.parse::<Thing>().ok()))
     }
     async fn add_jti_to_blacklist(&self, jti: &str, ttl_seconds: u64) -> AppResult<()> {
         let key = format!("blacklist:jti:{}", jti);

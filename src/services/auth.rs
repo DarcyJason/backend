@@ -27,7 +27,10 @@ use crate::{
         },
         response::auth::{LoginResponse, VerifyUserResponse},
     },
-    models::user::{User, UserStatus},
+    models::{
+        email::EmailType,
+        user::{User, UserStatus},
+    },
     repositories::{
         redis::auth::AuthCacheRepository,
         surreal::{
@@ -123,7 +126,7 @@ impl AuthService {
             // Use Redis to store verification token (e.g., for 30 minutes)
             self.db_client
                 .redis_client
-                .set_temp_token(&email_token, &user.id, 1800)
+                .set_email_token(EmailType::Verification, &email_token, &user.id, 1800)
                 .await?;
 
             let html = VERIFICATION_EMAIL_HTML
@@ -173,7 +176,7 @@ impl AuthService {
                 // Use Redis to store verification token
                 self.db_client
                     .redis_client
-                    .set_temp_token(&email_token, &user.id, 1800)
+                    .set_email_token(EmailType::Verification, &email_token, &user.id, 1800)
                     .await?;
 
                 let html = VERIFICATION_EMAIL_HTML
@@ -295,7 +298,7 @@ impl AuthService {
         let user_id = match self
             .db_client
             .redis_client
-            .use_temp_token(&payload.email_token)
+            .use_email_token(EmailType::Verification, &payload.email_token)
             .await?
         {
             Some(user_id) => user_id,
@@ -356,7 +359,7 @@ impl AuthService {
         let email_token = generate_email_token();
         self.db_client
             .redis_client
-            .set_temp_token(&email_token, &user.id, 1800)
+            .set_email_token(EmailType::PasswordReset, &email_token, &user.id, 1800)
             .await?;
         let html = RESET_PASSWORD_EMAIL_HTML
             .replace("{{username}}", &user.name)
@@ -385,7 +388,7 @@ impl AuthService {
         let user_id = match self
             .db_client
             .redis_client
-            .use_temp_token(&payload.token)
+            .use_email_token(EmailType::PasswordReset, &payload.token)
             .await?
         {
             Some(user_id) => user_id,
