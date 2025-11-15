@@ -16,6 +16,12 @@ pub fn validate_register_payload(payload: &RegisterRequest) -> AppResult<()> {
             ValidationErrorKind::ValidationFailed("Name can't be empty".to_string()).into(),
         );
     }
+    if payload.name.len() < 3 {
+        return Err(ValidationErrorKind::ValidationFailed(
+            "Name can't be shorter than 3 characters".to_string(),
+        )
+        .into());
+    }
     if payload.name.len() > 20 {
         return Err(ValidationErrorKind::ValidationFailed(
             "Name can't be longer than 20 characters".to_string(),
