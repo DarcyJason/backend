@@ -11,7 +11,7 @@ use crate::{
     core::error::{access_token::AccessTokenErrorKind, user::UserErrorKind},
     core::{result::AppResult, state::AppState},
     models::user::{User, UserRole},
-    repositories::surreal::auth::AuthRepository,
+    repositories::{redis::auth::AuthCacheRepository, surreal::auth::AuthRepository},
     utils::token::validate_access_token,
 };
 
@@ -40,18 +40,26 @@ pub async fn auth(
             return Err(AccessTokenErrorKind::InvalidAccessToken.into());
         }
     };
-    match app_state
-        .db_client
-        .surreal_client
-        .find_user_by_id(user_id)
-        .await?
-    {
-        Some(user) => {
-            req.extensions_mut().insert(user);
-            Ok(next.run(req).await)
-        }
-        None => Err(UserErrorKind::UserNotFound.into()),
-    }
+    let cached_user = app_state.db_client.redis_client.get_user(&user_id).await?;
+    let user = if let Some(user) = cached_user {
+        user
+    } else {
+        let db_user = app_state
+            .db_client
+            .surreal_client
+            .find_user_by_id(user_id.clone())
+            .await?
+            .ok_or(UserErrorKind::UserNotFound)?;
+        app_state
+            .db_client
+            .redis_client
+            .set_user(&db_user, 900)
+            .await?;
+        db_user
+    };
+
+    req.extensions_mut().insert(user);
+    Ok(next.run(req).await)
 }
 
 pub async fn role_check(

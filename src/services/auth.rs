@@ -27,15 +27,17 @@ use crate::{
         },
         response::auth::{LoginResponse, VerifyUserResponse},
     },
-    models::{
-        email::EmailType,
-        user::{User, UserStatus},
+    models::user::{User, UserStatus},
+    repositories::{
+        redis::auth::AuthCacheRepository,
+        surreal::{
+            auth::AuthRepository, device::DeviceRepository, refresh_token::RefreshTokenRepository,
+        },
     },
-    repositories::surreal::{
-        auth::AuthRepository, device::DeviceRepository, email::EmailRepository,
-        refresh_token::RefreshTokenRepository,
+    templates::{
+        reset_password_email_html::RESET_PASSWORD_EMAIL_HTML,
+        verification_email_html::VERIFICATION_EMAIL_HTML,
     },
-    templates::verification_email_html::VERIFICATION_EMAIL_HTML,
     utils::{
         device::parse_user_agent_detailed,
         mail::send_mail,
@@ -118,14 +120,12 @@ impl AuthService {
         }
         if !user.is_verified {
             let email_token = generate_email_token();
+            // Use Redis to store verification token (e.g., for 30 minutes)
             self.db_client
-                .surreal_client
-                .create_email(
-                    user.id.clone(),
-                    EmailType::Verification,
-                    email_token.clone(),
-                )
+                .redis_client
+                .set_temp_token(&email_token, &user.id, 1800)
                 .await?;
+
             let html = VERIFICATION_EMAIL_HTML
                 .replace("{{username}}", &user.name)
                 .replace("{{email_token}}", &email_token);
@@ -170,14 +170,12 @@ impl AuthService {
             Some(device) => device,
             None => {
                 let email_token = generate_email_token();
+                // Use Redis to store verification token
                 self.db_client
-                    .surreal_client
-                    .create_email(
-                        user.id.clone(),
-                        EmailType::Verification,
-                        email_token.clone(),
-                    )
+                    .redis_client
+                    .set_temp_token(&email_token, &user.id, 1800)
                     .await?;
+
                 let html = VERIFICATION_EMAIL_HTML
                     .replace("{{username}}", &user.name)
                     .replace("{{email_token}}", &email_token);
@@ -294,31 +292,30 @@ impl AuthService {
         payload: VerifyUserRequest,
     ) -> AppResult<impl IntoResponse + use<>> {
         validate_verify_user_payload(&payload)?;
-        let user = match self
+        let user_id = match self
             .db_client
-            .surreal_client
-            .find_user_by_email(&payload.email)
+            .redis_client
+            .use_temp_token(&payload.email_token)
             .await?
         {
-            Some(user) => user,
-            None => return Err(UserErrorKind::UserNotFound.into()),
+            Some(user_id) => user_id,
+            None => return Err(EmailErrorKind::InvalidToken.into()),
         };
-        let email = match self
+        let user = self
             .db_client
             .surreal_client
-            .find_email_by_user_id_and_email_type(user.id.clone(), EmailType::Verification)
+            .find_user_by_id(user_id.clone())
             .await?
-        {
-            Some(email) => email,
-            None => return Err(EmailErrorKind::EmailNotFound.into()),
-        };
-        if email.email_token != payload.email_token {
-            return Err(EmailErrorKind::InvalidToken.into());
+            .ok_or(UserErrorKind::UserNotFound)?;
+
+        if user.email != payload.email {
+            return Err(UserErrorKind::Unauthorized.into());
         }
         self.db_client
             .surreal_client
             .user_verified(user.id.clone(), UserStatus::Active)
             .await?;
+        self.db_client.redis_client.delete_user(&user.id).await?;
         let user_agent_str = match headers.get("User-Agent").and_then(|ua| ua.to_str().ok()) {
             Some(user_agent) => user_agent,
             None => return Err(UserErrorKind::MissingUserAgent.into()),
@@ -358,14 +355,10 @@ impl AuthService {
         };
         let email_token = generate_email_token();
         self.db_client
-            .surreal_client
-            .create_email(
-                user.id.clone(),
-                EmailType::PasswordReset,
-                email_token.clone(),
-            )
+            .redis_client
+            .set_temp_token(&email_token, &user.id, 1800)
             .await?;
-        let html = VERIFICATION_EMAIL_HTML
+        let html = RESET_PASSWORD_EMAIL_HTML
             .replace("{{username}}", &user.name)
             .replace("{{email_token}}", &email_token);
         let _email = send_mail(
@@ -389,30 +382,30 @@ impl AuthService {
         payload: ResetPasswordRequest,
     ) -> AppResult<impl IntoResponse + use<>> {
         validate_reset_password_payload(&payload)?;
-        let user = match self
+        let user_id = match self
             .db_client
-            .surreal_client
-            .find_user_by_email(&payload.email)
+            .redis_client
+            .use_temp_token(&payload.token)
             .await?
         {
-            Some(user) => user,
-            None => return Err(UserErrorKind::UserNotFound.into()),
+            Some(user_id) => user_id,
+            None => return Err(EmailErrorKind::InvalidToken.into()),
         };
-        let email = match self
+        let user = self
             .db_client
             .surreal_client
-            .find_email_by_user_id_and_email_type(user.id.clone(), EmailType::PasswordReset)
+            .find_user_by_id(user_id.clone())
             .await?
-        {
-            Some(email) => email,
-            None => return Err(EmailErrorKind::EmailNotFound.into()),
-        };
-        if email.email_token == payload.token {
-            self.db_client
-                .surreal_client
-                .reset_password(user.id.clone(), &payload.new_password)
-                .await?;
+            .ok_or(UserErrorKind::UserNotFound)?;
+
+        if user.email != payload.email {
+            return Err(UserErrorKind::Unauthorized.into());
         }
+        self.db_client
+            .surreal_client
+            .reset_password(user.id.clone(), &payload.new_password)
+            .await?;
+        self.db_client.redis_client.delete_user(&user.id).await?;
         Ok(AppResponse::<()>::success(
             StatusCode::OK.as_u16(),
             "Reset your password successfully",

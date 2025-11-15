@@ -18,6 +18,8 @@ pub enum ExternalError {
     JsonWebToken(#[from] jsonwebtoken::errors::Error),
     #[error(transparent)]
     Resend(#[from] resend_rs::Error),
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
 }
 
 impl ErrorKind for ExternalError {
