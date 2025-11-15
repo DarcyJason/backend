@@ -78,3 +78,5 @@ pub async fn reset_password(
 ) -> AppResult<impl IntoResponse> {
     app_state.services.auth.reset_password(payload).await
 }
+
+pub async fn refresh_token() {}

@@ -13,6 +13,8 @@ pub enum UserErrorKind {
     UserNotFound,
     #[error("Wrong password")]
     WrongPassword,
+    #[error("Password must be different from last password")]
+    PasswordMustBeDifferentFromLastPassword,
     #[error("Unauthorized")]
     Unauthorized,
     #[error("Failed to generate tokens")]
@@ -28,6 +30,7 @@ impl ErrorKind for UserErrorKind {
             Self::UserAlreadyExists => StatusCode::CONFLICT,
             Self::UserNotFound => StatusCode::NOT_FOUND,
             Self::WrongPassword => StatusCode::UNAUTHORIZED,
+            Self::PasswordMustBeDifferentFromLastPassword => StatusCode::UNAUTHORIZED,
             Self::Unauthorized => StatusCode::UNAUTHORIZED,
             Self::TokenGenerationFailed => StatusCode::INTERNAL_SERVER_ERROR,
             Self::MissingUserAgent => StatusCode::BAD_REQUEST,
