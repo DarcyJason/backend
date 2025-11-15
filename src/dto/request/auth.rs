@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-pub struct RegisterDTO {
+pub struct RegisterRequest {
     pub name: String,
     pub email: String,
     pub password: String,
@@ -9,24 +9,24 @@ pub struct RegisterDTO {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct LoginDTO {
+pub struct LoginRequest {
     pub email: String,
     pub password: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct VerifyUserDTO {
+pub struct VerifyUserRequest {
     pub email: String,
     pub email_token: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ForgetPasswordDTO {
+pub struct ForgetPasswordRequest {
     pub email: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ResetPasswordDTO {
+pub struct ResetPasswordRequest {
     pub email: String,
     pub token: String,
     pub new_password: String,

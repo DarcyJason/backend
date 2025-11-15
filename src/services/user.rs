@@ -5,8 +5,8 @@ use axum::{http::StatusCode, response::IntoResponse};
 use crate::{
     core::{config::AppConfig, response::AppResponse, result::AppResult},
     database::client::DBClient,
+    dto::response::user::MeResponse,
     models::user::User,
-    vo::user::MeVO,
 };
 
 #[derive(Debug)]
@@ -20,8 +20,8 @@ impl UserService {
         Self { config, db_client }
     }
     pub async fn get_me(&self, user: User) -> AppResult<impl IntoResponse + use<>> {
-        let me = MeVO::from(user);
-        Ok(AppResponse::<MeVO>::success(
+        let me = MeResponse::from(user);
+        Ok(AppResponse::<MeResponse>::success(
             StatusCode::OK.as_u16(),
             "OK",
             StatusCode::OK.canonical_reason().unwrap_or("OK"),

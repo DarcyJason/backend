@@ -8,11 +8,13 @@ use axum_extra::extract::cookie::CookieJar;
 use std::{net::SocketAddr, sync::Arc};
 use tracing::instrument;
 
-use crate::dto::auth::LoginDTO;
+use crate::dto::request::auth::LoginRequest;
 use crate::{
     core::result::AppResult,
     core::state::AppState,
-    dto::auth::{ForgetPasswordDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
+    dto::request::auth::{
+        ForgetPasswordRequest, RegisterRequest, ResetPasswordRequest, VerifyUserRequest,
+    },
     models::user::User,
 };
 
@@ -21,7 +23,7 @@ pub async fn register(
     State(app_state): State<Arc<AppState>>,
     uri: OriginalUri,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    Json(payload): Json<RegisterDTO>,
+    Json(payload): Json<RegisterRequest>,
 ) -> AppResult<impl IntoResponse> {
     app_state.services.auth.register(payload).await
 }
@@ -33,7 +35,7 @@ pub async fn login(
     jar: CookieJar,
     uri: OriginalUri,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    Json(payload): Json<LoginDTO>,
+    Json(payload): Json<LoginRequest>,
 ) -> AppResult<impl IntoResponse> {
     app_state.services.auth.login(headers, jar, payload).await
 }
@@ -52,7 +54,7 @@ pub async fn verify_email(
     State(app_state): State<Arc<AppState>>,
     headers: HeaderMap,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    Json(payload): Json<VerifyUserDTO>,
+    Json(payload): Json<VerifyUserRequest>,
 ) -> AppResult<impl IntoResponse> {
     app_state
         .services
@@ -64,7 +66,7 @@ pub async fn verify_email(
 #[instrument(skip(app_state))]
 pub async fn forget_password(
     State(app_state): State<Arc<AppState>>,
-    Json(payload): Json<ForgetPasswordDTO>,
+    Json(payload): Json<ForgetPasswordRequest>,
 ) -> AppResult<impl IntoResponse> {
     app_state.services.auth.forget_password(payload).await
 }
@@ -72,7 +74,7 @@ pub async fn forget_password(
 #[instrument(skip(app_state))]
 pub async fn reset_password(
     State(app_state): State<Arc<AppState>>,
-    Json(payload): Json<ResetPasswordDTO>,
+    Json(payload): Json<ResetPasswordRequest>,
 ) -> AppResult<impl IntoResponse> {
     app_state.services.auth.reset_password(payload).await
 }

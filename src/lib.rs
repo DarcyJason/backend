@@ -22,7 +22,6 @@ pub mod services;
 pub mod templates;
 pub mod utils;
 pub mod validation;
-pub mod vo;
 
 pub async fn run() -> AppResult<()> {
     let (_guard, router, port) = init_app().await?;

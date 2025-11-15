@@ -3,11 +3,14 @@ use validator::ValidateEmail;
 use crate::{
     core::error::validation::ValidationErrorKind,
     core::result::AppResult,
-    dto::auth::{ForgetPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, VerifyUserDTO},
+    dto::request::auth::{
+        ForgetPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest,
+        VerifyUserRequest,
+    },
     utils::regex::{NAME_REGEX, PASSWORD_REGEX},
 };
 
-pub fn validate_register_payload(payload: &RegisterDTO) -> AppResult<()> {
+pub fn validate_register_payload(payload: &RegisterRequest) -> AppResult<()> {
     if payload.name.is_empty() {
         return Err(
             ValidationErrorKind::ValidationFailed("Name can't be empty".to_string()).into(),
@@ -94,7 +97,7 @@ pub fn validate_register_payload(payload: &RegisterDTO) -> AppResult<()> {
     Ok(())
 }
 
-pub fn validate_login_payload(payload: &LoginDTO) -> AppResult<()> {
+pub fn validate_login_payload(payload: &LoginRequest) -> AppResult<()> {
     if payload.email.is_empty() {
         return Err(
             ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()).into(),
@@ -132,7 +135,7 @@ pub fn validate_login_payload(payload: &LoginDTO) -> AppResult<()> {
     Ok(())
 }
 
-pub fn validate_verify_user_payload(payload: &VerifyUserDTO) -> AppResult<()> {
+pub fn validate_verify_user_payload(payload: &VerifyUserRequest) -> AppResult<()> {
     if payload.email_token.is_empty() {
         return Err(
             ValidationErrorKind::ValidationFailed("Token can't be empty".to_string()).into(),
@@ -147,7 +150,7 @@ pub fn validate_verify_user_payload(payload: &VerifyUserDTO) -> AppResult<()> {
     Ok(())
 }
 
-pub fn validate_forget_password_payload(payload: &ForgetPasswordDTO) -> AppResult<()> {
+pub fn validate_forget_password_payload(payload: &ForgetPasswordRequest) -> AppResult<()> {
     if payload.email.is_empty() {
         return Err(
             ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()).into(),
@@ -162,7 +165,7 @@ pub fn validate_forget_password_payload(payload: &ForgetPasswordDTO) -> AppResul
     Ok(())
 }
 
-pub fn validate_reset_password_payload(payload: &ResetPasswordDTO) -> AppResult<()> {
+pub fn validate_reset_password_payload(payload: &ResetPasswordRequest) -> AppResult<()> {
     if payload.email.is_empty() {
         return Err(
             ValidationErrorKind::ValidationFailed("Email can't be empty".to_string()).into(),

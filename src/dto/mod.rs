@@ -1,3 +1,2 @@
-pub mod user;
-pub mod auth;
-pub mod email;
+pub mod request;
+pub mod response;
